@@ -174,8 +174,8 @@ Finally you must define the `STTR_VISITORS` macro before `#include "sttr.cpp"`, 
 ```
 
 ## See Also:
-[RTTR](https://github.com/rttrorg/rttr)  - All bells and whistles
-[Ponder](https://github.com/billyquith/ponder) Ponder
+* [RTTR](https://github.com/rttrorg/rttr)  - All bells and whistles
+* [Ponder](https://github.com/billyquith/ponder) Ponder
 
 ## Liscense
 Public Domain

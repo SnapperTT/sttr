@@ -83,27 +83,6 @@ public:
 		}
 	};
 	
-/// Example visitor - extracts a type without rtti
-/// Usage: 
-/// Typename_Extractor_Visitor RTEV
-/// 
-class Typename_Extractor_Visitor : public Visitor_Base {
-public:
-	std::string type_name_out;
-	
-	template<typename T>
-	void visit(Reg<T> * RB) {
-		type_name_out = sttr::getTypeName<decltype(RB->func)>();
-		}
-	
-	void * getSignature() {
-		return getSignatureStatic();
-		}
-	static void * getSignatureStatic() {
-		return (void*) sttr::getTypeSignature<Typename_Extractor_Visitor>();
-		}
-	};
-	
 
 class RegBase {
 public:
@@ -121,6 +100,7 @@ public:
 	RegBase(const char * _name) : name(_name), isStatic(false), isConst(false), isVariable(false), isFunction(false), userFlags(0), userString(""), userData(NULL) {}
 	
 	virtual void visit(Visitor_Base * V) {}
+	virtual std::string getTypeName() { return "" }
 	virtual unsigned char const * getAddr() { return 0; }
 	};
 	
@@ -132,9 +112,7 @@ public:
 	Reg(T v, const char * _name) : func(v), RegBase(_name) {}
 	
 	void visit(Visitor_Base * v) {
-		// Upcast and get the right visit
-		STTR_ADD_VISITOR(Typename_Extractor_Visitor)
-		
+		// Upcast and get the right visitor
 		#ifdef STTR_VISITORS
 			STTR_VISITORS
 		#else
@@ -142,6 +120,9 @@ public:
 		#endif
 		v->visit(this);
 		}
+	
+	/// Returns the type of T as a human readable string
+	std::string getTypeName() { return sttr::getTypeName<T>(); }
 	
 	/// Get the raw address of a pointer
 	unsigned char const * getAddr() {
@@ -234,11 +215,8 @@ public:
 		
 	std::string toString(const int indent=0) {
 		std::string r = "";
-		Typename_Extractor_Visitor RTEV;
-		
 		for (RegBase * RB : members) {
-			RB->visit(&RTEV);
-			r += std::string(indent,'\t') + "\tField: "+ RB->name + "\tTypedef: " + RTEV.type_name_out + " isStatic: " + STTR_BTOS(RB->isStatic) + " , isConst: " + STTR_BTOS(RB->isConst) + ", isFunction: " + STTR_BTOS(RB->isFunction) + ", isVariable: " + STTR_BTOS(RB->isVariable) + "\n";
+			r += std::string(indent,'\t') + "\tField: "+ RB->name + "\tTypedef: " + RB->getTypeName() + " isStatic: " + STTR_BTOS(RB->isStatic) + " , isConst: " + STTR_BTOS(RB->isConst) + ", isFunction: " + STTR_BTOS(RB->isFunction) + ", isVariable: " + STTR_BTOS(RB->isVariable) + "\n";
 			}
 		for (RegNamespace & RS : classes) {
 			r += std::string(indent,'\t') + "class " + RS.name + ":\n";
