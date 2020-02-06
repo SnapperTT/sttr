@@ -21,14 +21,6 @@ namespace sttr
 namespace sttr
 {
   template <typename T>
-  void Typename_Extractor_Visitor::visit (Reg <T> * RB)
-                                {
-		type_name_out = sttr::getTypeName<decltype(RB->func)>();
-		}
-}
-namespace sttr
-{
-  template <typename T>
   Reg <T>::Reg (T v, char const * _name)
     : func (v), RegBase (_name)
                                                                {}
@@ -38,9 +30,7 @@ namespace sttr
   template <typename T>
   void Reg <T>::visit (Visitor_Base * v)
                                      {
-		// Upcast and get the right visit
-		STTR_ADD_VISITOR(Typename_Extractor_Visitor)
-		
+		// Upcast and get the right visitor
 		#ifdef STTR_VISITORS
 			STTR_VISITORS
 		#else
@@ -48,6 +38,12 @@ namespace sttr
 		#endif
 		v->visit(this);
 		}
+}
+namespace sttr
+{
+  template <typename T>
+  std::string Reg <T>::getTypeName ()
+                                  { return sttr::getTypeName<T>(); }
 }
 namespace sttr
 {
@@ -77,10 +73,10 @@ namespace sttr
   template <typename T>
   RegNamespace & RegNamespace::beginClass (char const * _name)
                                                       {
-		RegNamespace R (_name);
-		R.parent = this;
-		R.thisClass = new Reg<T*>(NULL, _name);
+		RegNamespace * R = new RegNamespace(_name);
+		R->parent = this;
+		R->thisClass = new Reg<T*>(NULL, _name);
 		classes.push_back(R);
-		return classes[classes.size()-1];
+		return *(classes[classes.size()-1]);
 		}
 }

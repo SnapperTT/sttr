@@ -128,8 +128,7 @@ Class derived from RegBase, used to store pointers to registered fields (eg, if 
 * `void visit(Visitor_Base * R)` - Use a Visitor to access `T func` see `example.cpp` on how to do this
 
 ### RegNamespace
-`class RegNamespace`
-Tree-like container to store registered stuff. Also used to represent a registered class. Most of these methods return the object that you called it from so that you can chain calls (`mNamespace.addField().setUserFlags().addField(). ... etc`).
+`class RegNamespace` - Tree-like container to store registered stuff. Also used to represent a registered class. Most of these methods return the object that you called it from so that you can chain calls (`mNamespace.addField().setUserFlags().addField(). ... etc`).
 
 * `template <typename T> RegNamespace & regField(T v, const char * _name)` - Registers a field. This may be a function, a variable, either belonging to a class or free.
 
@@ -139,7 +138,8 @@ Tree-like container to store registered stuff. Also used to represent a register
 * `template<typename T> RegNamespace & beginClass(const char * _name)` - Starts a class. A class is represented internally as a RegNamespace, so this returns the new one created. 
 * `RegNamespace & endClass()` - Ends the class you're working on
 * `RegNamespace & findClass(const char * class_name)` - Searches for a class. Will trip an assert if target is not found.
-
+* `RegNamespace * findClassPointer(const char * class_name)` - Searches for a class. Will NOT trip an assert if target is not found, returns a pointer
+* `std::string toString()` - Recursively prints out the layout of the namespace tree
 
 ## Visitors
 To access the raw pointer to a registered field you must use a visitor. Copy and paste the following code (change MyVisitor to something else)

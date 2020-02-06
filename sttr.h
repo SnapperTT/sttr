@@ -50,16 +50,6 @@ namespace sttr {
   };
 }
 namespace sttr {
-  class Typename_Extractor_Visitor : public Visitor_Base {
-  public:
-    std::string type_name_out;
-    template <typename T>
-    void visit (Reg <T> * RB);
-    void * getSignature ();
-    static void * getSignatureStatic ();
-  };
-}
-namespace sttr {
   class RegBase {
   public:
     char const * name;
@@ -72,6 +62,7 @@ namespace sttr {
     void * userData;
     RegBase (char const * _name);
     virtual void visit (Visitor_Base * V);
+    virtual std::string getTypeName ();
     virtual unsigned char const * getAddr ();
   };
 }
@@ -82,6 +73,7 @@ namespace sttr {
     T func;
     Reg (T v, char const * _name);
     void visit (Visitor_Base * v);
+    std::string getTypeName ();
     unsigned char const * getAddr ();
   };
 }
@@ -91,7 +83,7 @@ namespace sttr {
     RegNamespace * parent;
     char const * name;
     std::vector <RegBase*> members;
-    std::vector <RegNamespace> classes;
+    std::vector <RegNamespace*> classes;
     RegBase * thisClass;
     RegNamespace (char const * _name);
     ~ RegNamespace ();
@@ -104,7 +96,7 @@ namespace sttr {
     RegNamespace & beginClass (char const * _name);
     RegNamespace & endClass ();
     RegNamespace & findClass (char const * class_name);
-    RegNamespace * findClassWorker (char const * class_name);
+    RegNamespace * findClassPointer (char const * class_name);
     std::string toString (int const indent = 0);
   };
 }

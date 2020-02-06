@@ -33,21 +33,14 @@ namespace sttr {
 	}
 }
 namespace sttr {
-  void * Typename_Extractor_Visitor::getSignature () {
-	return getSignatureStatic();
-	}
-}
-namespace sttr {
-  void * Typename_Extractor_Visitor::getSignatureStatic () {
-	return (void*) sttr::getTypeSignature<Typename_Extractor_Visitor>();
-	}
-}
-namespace sttr {
   RegBase::RegBase (char const * _name)
     : name (_name), isStatic (false), isConst (false), isVariable (false), isFunction (false), userFlags (0), userString (""), userData (NULL) {}
 }
 namespace sttr {
   void RegBase::visit (Visitor_Base * V) {}
+}
+namespace sttr {
+  std::string RegBase::getTypeName () { return ""; }
 }
 namespace sttr {
   unsigned char const * RegBase::getAddr () { return 0; }
@@ -59,6 +52,7 @@ namespace sttr {
 namespace sttr {
   RegNamespace::~ RegNamespace () {
 	for (RegBase * RB : members) delete RB;
+	for (RegNamespace * RN : classes) delete RN;
 	if (thisClass) delete thisClass;
 	}
 }
@@ -97,21 +91,21 @@ namespace sttr {
 }
 namespace sttr {
   RegNamespace & RegNamespace::findClass (char const * class_name) {
-	RegNamespace * R = findClassWorker(class_name);
+	RegNamespace * R = findClassPointer(class_name);
 	assert(R && "sttr::RegNamespace::findClass : class not found");
 	return *R;
 	}
 }
 namespace sttr {
-  RegNamespace * RegNamespace::findClassWorker (char const * class_name) {
-	for (RegNamespace & R : classes) {
-		if (R.thisClass) {
-		if (!strcmp(R.thisClass->name, class_name))
-			return &R;
+  RegNamespace * RegNamespace::findClassPointer (char const * class_name) {
+	for (RegNamespace * R : classes) {
+		if (R->thisClass) {
+		if (!strcmp(R->thisClass->name, class_name))
+			return R;
 		}	
 		}
-	for (RegNamespace & R : classes) {
-		RegNamespace * R2 = R.findClassWorker(class_name);
+	for (RegNamespace * R : classes) {
+		RegNamespace * R2 = R->findClassPointer(class_name);
 		if (R2)
 		return R2;
 		}
@@ -121,15 +115,12 @@ namespace sttr {
 namespace sttr {
   std::string RegNamespace::toString (int const indent) {
 	std::string r = "";
-	Typename_Extractor_Visitor RTEV;
-	
 	for (RegBase * RB : members) {
-		RB->visit(&RTEV);
-		r += std::string(indent,'\t') + "\tField: "+ RB->name + "\tTypedef: " + RTEV.type_name_out + " isStatic: " + STTR_BTOS(RB->isStatic) + " , isConst: " + STTR_BTOS(RB->isConst) + ", isFunction: " + STTR_BTOS(RB->isFunction) + ", isVariable: " + STTR_BTOS(RB->isVariable) + "\n";
+		r += std::string(indent,'\t') + "\tField: "+ RB->name + "\tTypedef: " + RB->getTypeName() + " isStatic: " + STTR_BTOS(RB->isStatic) + " , isConst: " + STTR_BTOS(RB->isConst) + ", isFunction: " + STTR_BTOS(RB->isFunction) + ", isVariable: " + STTR_BTOS(RB->isVariable) + "\n";
 		}
-	for (RegNamespace & RS : classes) {
-		r += std::string(indent,'\t') + "class " + RS.name + ":\n";
-		r += RS.toString(indent+1);
+	for (RegNamespace * RS : classes) {
+		r += std::string(indent,'\t') + "class " + RS->name + ":\n";
+		r += RS->toString(indent+1);
 		}
 	return r;
 	}
@@ -153,21 +144,13 @@ namespace sttr {
 }
 namespace sttr {
   template <typename T>
-  void Typename_Extractor_Visitor::visit (Reg <T> * RB) {
-	type_name_out = sttr::getTypeName<decltype(RB->func)>();
-	}
-}
-namespace sttr {
-  template <typename T>
   Reg <T>::Reg (T v, char const * _name)
     : func (v), RegBase (_name) {}
 }
 namespace sttr {
   template <typename T>
   void Reg <T>::visit (Visitor_Base * v) {
-	// Upcast and get the right visit
-	STTR_ADD_VISITOR(Typename_Extractor_Visitor)
-	
+	// Upcast and get the right visitor
 	#ifdef STTR_VISITORS
 		STTR_VISITORS
 	#else
@@ -175,6 +158,10 @@ namespace sttr {
 	#endif
 	v->visit(this);
 	}
+}
+namespace sttr {
+  template <typename T>
+  std::string Reg <T>::getTypeName () { return sttr::getTypeName<T>(); }
 }
 namespace sttr {
   template <typename T>
@@ -198,10 +185,10 @@ namespace sttr {
 namespace sttr {
   template <typename T>
   RegNamespace & RegNamespace::beginClass (char const * _name) {
-	RegNamespace R (_name);
-	R.parent = this;
-	R.thisClass = new Reg<T*>(NULL, _name);
+	RegNamespace * R = new RegNamespace(_name);
+	R->parent = this;
+	R->thisClass = new Reg<T*>(NULL, _name);
 	classes.push_back(R);
-	return classes[classes.size()-1];
+	return *(classes[classes.size()-1]);
 	}
 }

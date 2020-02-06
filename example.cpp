@@ -62,6 +62,7 @@ int main(int argc, char ** argv) {
 		.regField(&C::i, "i")
 		.regField(&C::d, "d")
 		.regField(&C::func, "func")
+			.setUserString("Test user string")
 		
 		.regField(&C::static_var, "static_var")
 		.regField(&C::static_func, "static_func")
@@ -76,8 +77,8 @@ int main(int argc, char ** argv) {
 	MyVisitor V;
 	
 	// Itterating over a registration
-	for (sttr::RegBase * RB : mNamespace.classes[0].members) {
-		std::cout << "RB: " << RB->name << ", addr: " << ((void *)RB->getAddr()) << std::endl;
+	for (sttr::RegBase * RB : mNamespace.findClass("C").members) {
+		std::cout << "RB: " << RB->name << ", typedef: " << RB->getTypeName() << ", userString: "<< std::endl;
 		RB->visit(&V);
 		}
 	
@@ -88,15 +89,16 @@ int main(int argc, char ** argv) {
 	}
 
 //
-//	OUTPUT:
-//	Decltype: int (C::*)(int) const
-//	RB: i, addr: 0
-//	RB: d, addr: 0x8
-//	RB: func, addr: 0x2
-//	RB: static_var, addr: 0x28
-//	RB: static_func, addr: 0x12
+// OUTPUT:
 //
-//	DUMP:
+//	Decltype: int (C::*)(int) const
+//	RB: i, typedef: int C::*, userString: 
+//	RB: d, typedef: double C::*, userString: 
+//	RB: func, typedef: int (C::*)(int) const, userString: 
+//	RB: static_var, typedef: int*, userString: 
+//	RB: static_func, typedef: int (*)(), userString: 
+//	
+//	DUMP: 
 //	class C:
 //			Field: i	Typedef: int C::* isStatic: false , isConst: false, isFunction: false, isVariable: true
 //			Field: d	Typedef: double C::* isStatic: false , isConst: false, isFunction: false, isVariable: true
@@ -105,4 +107,5 @@ int main(int argc, char ** argv) {
 //			Field: static_func	Typedef: int (*)() isStatic: true , isConst: false, isFunction: true, isVariable: false
 //		class D:
 //				Field: di	Typedef: int D::* isStatic: false , isConst: false, isFunction: false, isVariable: true
-//
+//	
+//	

@@ -7,5 +7,5 @@ perl -0777 -i -pe 's/\t\t/\t/g' temp/sttr.cpp
 perl -0777 -i -pe 's/[\s\n\t]+{/ {/g' temp/sttr.h
 perl -0777 -i -pe 's/\t\t/\t/g' temp/sttr.h
 cp -rf temp/sttr.cpp temp/sttr.h .
-g++ example.cpp -o example
+g++ -g example.cpp -o example
 
