@@ -102,44 +102,43 @@ int main(int argc, char ** argv) {
 Everything is in the sttr namespace
 
 ### Free Functions
-`template <typename T> std::string getTypeName()`
+* `template <typename T> std::string getTypeName()` - 
 Converts a type to a string
 
-`template <typename T> char * getTypeSignature()`
+* `template <typename T> char * getTypeSignature()` - 
 Converts a type to a unique pointer. Used to identify classes without RTTI
 
 ### RegBase
-`class RegBase`
-Base class used to stored registered fields (variables, functions, classes)
-`const char * name` - The name of a registered field. Set on creation
-`bool isStatic`	- Is this a static variable or a static function? (Auto detected and set on creation). Only works for class members and methods
-`bool isConst` - Is the field marked as const? (Auto)
-`bool isVariable` - Is this a variable (Auto)
-`bool isFunction` - Is this a function (Auto)
-`uint32_t userFlags` - You can use this for whatever you want. I use it for bit flags
-`std::string userString` - You can use this for whatever you want. I use it for documentation
-`void * userData` - You can use this for whatever you want
+* `class RegBase` - Base class used to stored registered fields (variables, functions, classes)
+* `const char * name` - The name of a registered field. Set on creation
+* `bool isStatic`	- Is this a static variable or a static function? (Auto detected and set on creation). Only works for class members and methods
+* `bool isConst` - Is the field marked as const? (Auto)
+* `bool isVariable` - Is this a variable (Auto)
+* `bool isFunction` - Is this a function (Auto)
+* `uint32_t userFlags` - You can use this for whatever you want. I use it for bit flags
+* `std::string userString` - You can use this for whatever you want. I use it for documentation
+* `void * userData` - You can use this for whatever you want
 
-`virtual void visit(RegVisitor * R)` - Used by Reg<T>
+* `virtual void visit(RegVisitor * R)` - Used by Reg<T>
 
 ### Reg<T>
-`template<typename T> class Reg : public RegBase`
+* `template<typename T> class Reg : public RegBase` - 
 Class derived from RegBase, used to store pointers to registered fields (eg, if you register a function, a function pointer is stored here)
-`T func` - The pointer to whatever has been registered
-`void visit(Visitor_Base * R)` - Use a Visitor to access `T func` see `example.cpp` on how to do this
+* `T func` - The pointer to whatever has been registered
+* `void visit(Visitor_Base * R)` - Use a Visitor to access `T func` see `example.cpp` on how to do this
 
 ### RegNamespace
 `class RegNamespace`
 Tree-like container to store registered stuff. Also used to represent a registered class. Most of these methods return the object that you called it from so that you can chain calls (`mNamespace.addField().setUserFlags().addField(). ... etc`).
 
-`template <typename T> RegNamespace & regField(T v, const char * _name)` - Registers a field. This may be a function, a variable, either belonging to a class or free.
+* `template <typename T> RegNamespace & regField(T v, const char * _name)` - Registers a field. This may be a function, a variable, either belonging to a class or free.
 
-`RegNamespace & setUserFlags (const uint32_t & userFlags)` - Sets field->userFlags for the last added field. Will trip an assert if no fields are present
-`RegNamespace & setUserString (const std::string & userString)` - Sets field->userString for the last added field. Will trip an assert if no fields are present
-`RegNamespace & setUserData (void * userData)` - Sets field->userData for the last added field. Does not take ownership of userData, userData will not be deleted on destruction
-`template<typename T> RegNamespace & beginClass(const char * _name)` - Starts a class. A class is represented internally as a RegNamespace, so this returns the new one created. 
-`RegNamespace & endClass()` - Ends the class you're working on
-`RegNamespace & findClass(const char * class_name)` - Searches for a class. Will trip an assert if target is not found.
+* `RegNamespace & setUserFlags (const uint32_t & userFlags)` - Sets field->userFlags for the last added field. Will trip an assert if no fields are present
+* `RegNamespace & setUserString (const std::string & userString)` - Sets field->userString for the last added field. Will trip an assert if no fields are present
+* `RegNamespace & setUserData (void * userData)` - Sets field->userData for the last added field. Does not take ownership of userData, userData will not be deleted on destruction
+* `template<typename T> RegNamespace & beginClass(const char * _name)` - Starts a class. A class is represented internally as a RegNamespace, so this returns the new one created. 
+* `RegNamespace & endClass()` - Ends the class you're working on
+* `RegNamespace & findClass(const char * class_name)` - Searches for a class. Will trip an assert if target is not found.
 
 
 ## Visitors
@@ -168,15 +167,15 @@ public:
 Finally you must define the `STTR_VISITORS` macro before `#include "sttr.cpp"`, otherwise sttr won't know your visitor exists!
 ```
 #define STTR_VISITORS \
-	STTR_ADD_VISITOR(MyVisitor)
+	STTR_ADD_VISITOR(MyVisitor) \
 	STTR_ADD_VISITOR(MyOtherVisitor)
 	
 #include "sttr.cpp"
 ```
 
 ## See Also:
-[https://github.com/rttrorg/rttr] RTTR - All bells and whistles
-[https://github.com/billyquith/ponder] Ponder
+[RTTR](https://github.com/rttrorg/rttr)  - All bells and whistles
+[Ponder](https://github.com/billyquith/ponder) Ponder
 
 ## Liscense
 Public Domain
