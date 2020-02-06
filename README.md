@@ -74,14 +74,10 @@ int main(int argc, char ** argv) {
 
 	// Itterating over members
 	sttr::RegNamespace * R = mNamespace.findClass("C");
-	for (sttr::RegBase * RB : R->members) {
-		// Extracting the typedef as a string
-		sttr::Typename_Extractor_Visitor RTEV;
-		RB->visit(RTEV);
-		
+	for (sttr::RegBase * RB : R->members) {		
 		// Outputing a member's class, address
 		std::cout << "Name: " << RB->name
-				<< ", typeDef: " << RTEV.type_name_out
+				<< ", typeDef: " << RB->getTypeName()
 				<< ", isStatic: " << STTR_BTOS(RB->isStatic)
 				<< ", isConst: " << STTR_BTOS(RB->isConst)
 				<< ", isFunction: " << STTR_BTOS(RB->isFunction)
