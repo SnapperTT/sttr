@@ -1,11 +1,11 @@
 // Includes
 #include <iostream>
-#include "sttr.h"
 
 
 // Example visitor - register
 // Copy and paste this into your own application
 // and fill void visit(sttr::Reg<T> * RB) with youe own stuff
+#include "sttr_visitor.h"
 class MyVisitor : public sttr::Visitor_Base {
 public:
 	template<typename T>
@@ -21,15 +21,15 @@ public:
 		}
 	};
 
+// STTR_VISITORS must be defined before including sttr.h
+#define STTR_VISITORS \
+	STTR_ADD_VISITOR(MyVisitor)
+	
+#include "sttr.h"
+
 ////////////////////////////////////////////////////////////////////////
 // Compiling sttr:
-// Simply include sttr.cpp somewhere!
-
-#define STTR_VISITORS \
-	STTR_ADD_VISITOR(::MyVisitor)
-	
-// STTR_VISITORS must be defined before including sttr.cpp
-// Any classes using STTR_VISITORS
+// Simply include sttr.cpp somewhere once in your application!
 
 #include "sttr.cpp"
 

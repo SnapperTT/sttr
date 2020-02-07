@@ -14,7 +14,9 @@
 #include <cstring>
 #include <string>
 
-#define STTR_ADD_VISITOR(mVisitorType) 					if (v->getSignature() == mVisitorType::getSignatureStatic()) { 		mVisitorType * vv = (mVisitorType *) v; 				vv->visit(this); 							return;								}
+#ifndef STTR_VISITOR_HEADER
+	#include "sttr_visitor.h"
+#endif
 	
 #define STTR_BTOS(B) (B ? "true" : "false")
 
@@ -24,14 +26,6 @@
 //#define STTR_VISITORS
 // 	STTR_ADD_VISITOR(Typename_Extractor_Visitor);
 
-namespace sttr {
-template<typename T>
-class Reg;
-
-// Converts a type to a unique address
-template<typename T>
-static char * getTypeSignature();
-}
 #define LZZ_INLINE inline
 namespace sttr {
   std::string getTypeName_filterTypeOut (std::string const & in);
@@ -39,15 +33,6 @@ namespace sttr {
 namespace sttr {
   template <typename T>
   std::string getTypeName ();
-}
-namespace sttr {
-  class Visitor_Base {
-  public:
-    template <typename T>
-    void visit (sttr::Reg <T> * RB);
-    virtual void * getSignature ();
-    static void * getSignatureStatic ();
-  };
 }
 namespace sttr {
   class RegBase {
@@ -99,6 +84,62 @@ namespace sttr {
     RegNamespace * findClassPointer (char const * class_name);
     std::string toString (int const indent = 0);
   };
+}
+namespace sttr {
+  template <typename T>
+  std::string getTypeName () {
+	return sttr::getTypeName_filterTypeOut(__PRETTY_FUNCTION__);
+	}
+}
+namespace sttr {
+  template <typename T>
+  Reg <T>::Reg (T v, char const * _name)
+    : func (v), RegBase (_name) {}
+}
+namespace sttr {
+  template <typename T>
+  void Reg <T>::visit (Visitor_Base * v) {
+	// Upcast and get the right visitor
+	#ifdef STTR_VISITORS
+		STTR_VISITORS
+	#else
+		#warning STTR_VISITORS macro not defined! To suppress this warning define it as an empty string "#define STTR_VISITORS". To add a visitor use #define STTR_VISITORS STTR_ADD_VISITOR(visitoclass_type) STTR_ADD_VISITOR(anothevisitoclass_type) ... etc.
+	#endif
+	v->visit(this);
+	}
+}
+namespace sttr {
+  template <typename T>
+  std::string Reg <T>::getTypeName () { return sttr::getTypeName<T>(); }
+}
+namespace sttr {
+  template <typename T>
+  unsigned char const * Reg <T>::getAddr () {
+	unsigned char const * first  = reinterpret_cast<unsigned char *>(&func);
+	return reinterpret_cast<unsigned char *>(*first);
+	}
+}
+namespace sttr {
+  template <typename T>
+  RegNamespace & RegNamespace::regField (T v, char const * _name) {
+	RegBase * R = new Reg<T>(v,_name);
+	R->isFunction = std::is_function<typename std::remove_pointer<T>::type>::value;
+	R->isVariable = !R->isFunction;
+	R->isConst = std::is_const<typename std::remove_pointer<T>::type>::value;
+	R->isStatic = parent && !std::is_member_pointer<T>::value;
+	members.push_back(R);
+	return *this;
+	}
+}
+namespace sttr {
+  template <typename T>
+  RegNamespace & RegNamespace::beginClass (char const * _name) {
+	RegNamespace * R = new RegNamespace(_name);
+	R->parent = this;
+	R->thisClass = new Reg<T*>(NULL, _name);
+	classes.push_back(R);
+	return *(classes[classes.size()-1]);
+	}
 }
 #undef LZZ_INLINE
 #endif

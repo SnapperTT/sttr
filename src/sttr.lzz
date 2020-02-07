@@ -10,12 +10,9 @@
 #include <cstring>
 #include <string>
 
-#define STTR_ADD_VISITOR(mVisitorType) 								\
-	if (v->getSignature() == mVisitorType::getSignatureStatic()) { 	\
-		mVisitorType * vv = (mVisitorType *) v; 					\
-		vv->visit(this); 											\
-		return;														\
-		}
+#ifndef STTR_VISITOR_HEADER
+	#include "sttr_visitor.h"
+#endif
 		
 #define STTR_BTOS(B) (B ? "true" : "false")
 
@@ -29,29 +26,14 @@
 // \
 	STTR_ADD_VISITOR(Typename_Extractor_Visitor);
 
-namespace sttr {
-template<typename T>
-class Reg;
-
-// Converts a type to a unique address
-template<typename T>
-static char * getTypeSignature();
-}
 #end
 
 #src
-// Converts a type to a unique address
-namespace sttr {
-template<typename T>
-static char * getTypeSignature() {
-	static char R;
-	return &R;
-	}
-}
 	
 #end
 
 namespace sttr {
+	
 	
 std::string getTypeName_filterTypeOut(const std::string & in) {
 	// Find "with T = " and stop when reaching ";"
@@ -67,22 +49,6 @@ template<typename T>
 std::string getTypeName() {
 	return sttr::getTypeName_filterTypeOut(__PRETTY_FUNCTION__);
 	}
-
-class Visitor_Base {
-public:
-	template<typename T>
-	void visit(sttr::Reg<T> * RB) {
-		//cout << "Visitor_Base" << endl;
-		}
-		
-	virtual void * getSignature() {
-		return getSignatureStatic();
-		}
-	static void * getSignatureStatic() {
-		return (void*) sttr::getTypeSignature<Visitor_Base>();
-		}
-	};
-	
 
 class RegBase {
 public:
