@@ -141,6 +141,8 @@ Class derived from RegBase, used to store pointers to registered fields (eg, if 
 ## Visitors
 To access the raw pointer to a registered field you must use a visitor. Copy and paste the following code (change MyVisitor to something else)
 ```
+#include "sttr_visitor.h"
+
 class MyVisitor : public sttr::Visitor_Base {
 public:	
 	template<typename T>
@@ -161,13 +163,13 @@ public:
 	};
 ```
 
-Finally you must define the `STTR_VISITORS` macro before `#include "sttr.cpp"`, otherwise sttr won't know your visitor exists!
+Finally you must define the `STTR_VISITORS` macro before `#include "sttr.h"`, otherwise sttr won't know your visitor exists!
 ```
 #define STTR_VISITORS \
 	STTR_ADD_VISITOR(MyVisitor) \
 	STTR_ADD_VISITOR(MyOtherVisitor)
 	
-#include "sttr.cpp"
+#include "sttr.h"
 ```
 
 ## See Also:
