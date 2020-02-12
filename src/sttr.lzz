@@ -64,6 +64,7 @@ public:
 	void * userData;
 	
 	RegBase(const char * _name) : name(_name), isStatic(false), isConst(false), isVariable(false), isFunction(false), userFlags(0), userString(""), userData(NULL) {}
+	virtual ~RegBase(){}
 	
 	virtual void visit(Visitor_Base * V) {}
 	virtual std::string getTypeName() { return ""; }
@@ -75,7 +76,8 @@ class Reg : public RegBase {
 public:
 	T func;
 	
-	Reg(T v, const char * _name) : func(v), RegBase(_name) {}
+	Reg(T v, const char * _name) : RegBase(_name), func(v) {}
+	virtual ~Reg(){}
 	
 	void visit(Visitor_Base * v) {
 		// Upcast and get the right visitor
@@ -178,6 +180,16 @@ public:
 				return R2;
 			}
 		return NULL;
+		}
+		
+	void visit(Visitor_Base * v) {
+		// Recusively visits all classes and members
+		for (RegNamespace * R : classes) {
+			R->visit(v);
+			}
+		for (RegBase * RB : members) {
+			RB->visit(v);
+			}
 		}
 		
 	std::string toString(const int indent=0) {

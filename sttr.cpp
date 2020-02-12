@@ -36,6 +36,9 @@ namespace sttr {
     : name (_name), isStatic (false), isConst (false), isVariable (false), isFunction (false), userFlags (0), userString (""), userData (NULL) {}
 }
 namespace sttr {
+  RegBase::~ RegBase () {}
+}
+namespace sttr {
   void RegBase::visit (Visitor_Base * V) {}
 }
 namespace sttr {
@@ -109,6 +112,17 @@ namespace sttr {
 		return R2;
 		}
 	return NULL;
+	}
+}
+namespace sttr {
+  void RegNamespace::visit (Visitor_Base * v) {
+	// Recusively visits all classes and members
+	for (RegNamespace * R : classes) {
+		R->visit(v);
+		}
+	for (RegBase * RB : members) {
+		RB->visit(v);
+		}
 	}
 }
 namespace sttr {

@@ -46,6 +46,7 @@ namespace sttr {
     std::string userString;
     void * userData;
     RegBase (char const * _name);
+    virtual ~ RegBase ();
     virtual void visit (Visitor_Base * V);
     virtual std::string getTypeName ();
     virtual unsigned char const * getAddr ();
@@ -57,6 +58,7 @@ namespace sttr {
   public:
     T func;
     Reg (T v, char const * _name);
+    virtual ~ Reg ();
     void visit (Visitor_Base * v);
     std::string getTypeName ();
     unsigned char const * getAddr ();
@@ -82,6 +84,7 @@ namespace sttr {
     RegNamespace & endClass ();
     RegNamespace & findClass (char const * class_name);
     RegNamespace * findClassPointer (char const * class_name);
+    void visit (Visitor_Base * v);
     std::string toString (int const indent = 0);
   };
 }
@@ -94,7 +97,11 @@ namespace sttr {
 namespace sttr {
   template <typename T>
   Reg <T>::Reg (T v, char const * _name)
-    : func (v), RegBase (_name) {}
+    : RegBase (_name), func (v) {}
+}
+namespace sttr {
+  template <typename T>
+  Reg <T>::~ Reg () {}
 }
 namespace sttr {
   template <typename T>

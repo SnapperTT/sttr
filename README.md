@@ -121,7 +121,7 @@ Converts a type to a unique pointer. Used to identify classes without RTTI
 * `template<typename T> class Reg : public RegBase` - 
 Class derived from RegBase, used to store pointers to registered fields (eg, if you register a function, a function pointer is stored here)
 * `T func` - The pointer to whatever has been registered
-* `void visit(Visitor_Base * R)` - Use a Visitor to access `T func` see `example.cpp` on how to do this
+* `void visit(Visitor_Base * v)` - Use a Visitor to access `T func` see `example.cpp` on how to do this
 
 ### RegNamespace
 `class RegNamespace` - Tree-like container to store registered stuff. Also used to represent a registered class. Most of these methods return the object that you called it from so that you can chain calls (`mNamespace.addField().setUserFlags().addField(). ... etc`).
@@ -136,6 +136,7 @@ Class derived from RegBase, used to store pointers to registered fields (eg, if 
 * `RegNamespace & findClass(const char * class_name)` - Searches for a class. Will trip an assert if target is not found.
 * `RegNamespace * findClassPointer(const char * class_name)` - Searches for a class. Will NOT trip an assert if target is not found, returns a pointer
 * `std::string toString()` - Recursively prints out the layout of the namespace tree
+* `void visit(sttr::Visitor_Base * v)` - Recursively visits all registered members and classes with v
 
 ## Visitors
 To access the raw pointer to a registered field you must use a visitor. Copy and paste the following code (change MyVisitor to something else)
