@@ -84,6 +84,7 @@ namespace sttr {
     RegNamespace & endClass ();
     RegNamespace & findClass (char const * class_name);
     RegNamespace * findClassPointer (char const * class_name);
+    void visitRecursive (Visitor_Base * v);
     void visit (Visitor_Base * v);
     std::string toString (int const indent = 0);
   };

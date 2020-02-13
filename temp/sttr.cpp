@@ -97,11 +97,17 @@ namespace sttr {
 	}
 }
 namespace sttr {
-  void RegNamespace::visit (Visitor_Base * v) {
+  void RegNamespace::visitRecursive (Visitor_Base * v) {
 	// Recusively visits all classes and members
 	for (RegNamespace * R : classes) {
-		R->visit(v);
+		R->visitRecursive(v);
 		}
+	visit(v);
+	}
+}
+namespace sttr {
+  void RegNamespace::visit (Visitor_Base * v) {
+	// Recusively visits members
 	for (RegBase * RB : members) {
 		RB->visit(v);
 		}

@@ -136,7 +136,8 @@ Class derived from RegBase, used to store pointers to registered fields (eg, if 
 * `RegNamespace & findClass(const char * class_name)` - Searches for a class. Will trip an assert if target is not found.
 * `RegNamespace * findClassPointer(const char * class_name)` - Searches for a class. Will NOT trip an assert if target is not found, returns a pointer
 * `std::string toString()` - Recursively prints out the layout of the namespace tree
-* `void visit(sttr::Visitor_Base * v)` - Recursively visits all registered members and classes with v
+* `void visit(sttr::Visitor_Base * v)` - Visits all registered members and classes with v
+* `void visitRecursive(sttr::Visitor_Base * v)` - Recursively visits all registered members and classes with v
 
 ## Visitors
 To access the raw pointer to a registered field you must use a visitor. Copy and paste the following code (change MyVisitor to something else)
