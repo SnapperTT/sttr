@@ -1,0 +1,127 @@
+#hdr
+#include <type_traits>
+#include <string>
+
+#include "type_to_string.hpp"
+
+#define STTR_VISITOR_HEADER
+
+#define STTR_ADD_VISITOR(mVisitorType) 								\
+	if (v->getSignature() == mVisitorType::getSignatureStatic()) { 	\
+		mVisitorType * vv = (mVisitorType *) v; 					\
+		vv->visit(this); 											\
+		return;														\
+		}
+		
+namespace sttr {
+	class NullType {};
+
+	template<typename T, typename CT>
+	class Reg;
+	
+	// Utility templates
+	
+	// Yanks out the type of a member pointer 
+	template <class CT, typename T>
+	T getTypePointingTo(T CT::*v);
+	
+	template <typename T>
+	T getTypePointingTo(T * v);
+	
+	template <typename T>
+	T getTypePointingTo(T v);
+	
+//	template<class CT, typename T>
+//	inline T getBaseType(T *v) {}
+	
+	// Disjunction - for versions of c++ older than std::c++17
+	template<class...> struct disjunction : std::false_type { };
+	template<class B1> struct disjunction<B1> : B1 { };
+	template<class B1, class... Bn>
+	struct disjunction<B1, Bn...> 
+		: std::conditional_t<bool(B1::value), B1, disjunction<Bn...>>  { };
+	
+	template <typename T>
+	using negate = std::integral_constant<bool, !T::value>;
+
+	template <typename T>
+	using is_function = sttr::disjunction<std::is_function<typename std::remove_pointer<T>::type>, std::is_member_function_pointer<T>>;
+
+	template <typename T>
+	using is_variable = sttr::negate<sttr::is_function<T>>;
+
+	template <typename T>
+	using is_static = sttr::negate<std::is_member_pointer<T>>;
+
+	template <typename T>
+	using is_const = std::is_const<typename std::remove_pointer<T>::type>;
+	
+//	template<typename T>
+//static char * getTypeSignature(); // Should this be static??
+
+	inline std::string getTypeName_filterTypeOut(const std::string & in) {
+		// Find "with T = " and stop when reaching ";"
+		size_t start = in.find("T = ");
+		if (start == std::string::npos) return (in);
+		const std::string r = in.substr(start+4);
+		size_t end = r.find(";");
+		return (r.substr(0,end));
+		}
+
+	/// Prints the type of a function
+	#if __cplusplus >= 201703L
+	template<typename T>
+	inline const char * getTypeName() {
+		// This is set at compile time
+		return sttr::type_to_string_impl::TypeName<T>();
+		}
+	#else
+	template<typename T>
+	std::string getTypeName() {
+		// has to compile getTypeName_filterTypeOut - will spit out of heaps of asm (179 instructions for an int)
+		#ifndef STTR_SUPPRESS_CXX17_WARNING
+			#warning sttr::getTypeName - using slow code path. Enable c++17 or later to solve. (define STTR_SUPPRESS_CXX17_WARNING to suppress warning)
+		#endif
+		return sttr::getTypeName_filterTypeOut(__PRETTY_FUNCTION__).c_str();
+		}
+	#endif
+
+	}
+	
+#end
+
+#src
+#end
+
+
+namespace sttr {
+	
+
+	
+// Converts a type to a unique address
+template<typename T>
+char * getTypeSignature() {
+	static char R;
+	return &R;
+	}
+	
+class Visitor_Base {
+public:
+	template<typename T, typename CT>
+	void visit(sttr::Reg<T, CT> * RB) {
+		// Your code here if deriving from this class 
+		}
+		
+	virtual void * getSignature() {
+		// Must be present in derived classes
+		return getSignatureStatic();
+		}
+	static void * getSignatureStatic() {
+		// Must be present in derived classes
+		return (void*) sttr::getTypeSignature<Visitor_Base>();
+		}
+	};
+	
+}
+
+
