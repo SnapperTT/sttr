@@ -25,6 +25,12 @@
 //#define STTR_VISITORS
 // \
 	STTR_ADD_VISITOR(Typename_Extractor_Visitor);
+namespace sttr {
+	class RegNamespace;
+	}
+
+// Macro for registering field
+#define STTR_REG(C,X) regField<C>(&C::X,#X)
 
 #end
 
@@ -34,22 +40,6 @@
 
 namespace sttr {
 	
-	
-std::string getTypeName_filterTypeOut(const std::string & in) {
-	// Find "with T = " and stop when reaching ";"
-	size_t start = in.find("T = ");
-	if (start == std::string::npos) return in;
-	std::string r = in.substr(start+4);
-	size_t end = r.find(";");
-	return r.substr(0,end);
-	}
-
-/// Prints the type of a function
-template<typename T>
-std::string getTypeName() {
-	return sttr::getTypeName_filterTypeOut(__PRETTY_FUNCTION__);
-	}
-
 class RegBase {
 public:
 	const char * name;
@@ -57,21 +47,26 @@ public:
 	bool isConst;
 	bool isVariable;
 	bool isFunction;
+	// What owns this?
+	RegNamespace * mNamespace;
 	
 	// For your usage
 	uint32_t userFlags;
 	std::string userString;
 	void * userData;
 	
-	RegBase(const char * _name) : name(_name), isStatic(false), isConst(false), isVariable(false), isFunction(false), userFlags(0), userString(""), userData(NULL) {}
+	RegBase(const char * _name) : name(_name), isStatic(false), isConst(false), isVariable(false), isFunction(false), mNamespace(NULL), userFlags(0), userString(""), userData(NULL) {}
 	virtual ~RegBase(){}
 	
 	virtual void visit(Visitor_Base * V) {}
 	virtual std::string getTypeName() { return ""; }
-	virtual unsigned char const * getAddr() { return 0; }
+	virtual std::string getTypePointingTo() { return ""; }
+	virtual unsigned char const * getAddr() const { return 0; }
+	virtual const long long int getOffset() const { return 0; }
 	};
-	
-template<typename T>
+
+
+template<typename T, typename CT>
 class Reg : public RegBase {
 public:
 	T func;
@@ -91,11 +86,16 @@ public:
 	
 	/// Returns the type of T as a human readable string
 	std::string getTypeName() { return sttr::getTypeName<T>(); }
+	std::string getTypePointingTo() { return sttr::getTypeName<decltype(sttr::getTypePointingTo(func))>(); }
 	
-	/// Get the raw address of a pointer
-	unsigned char const * getAddr() {
-		unsigned char const * first  = reinterpret_cast<unsigned char *>(&func);
+	/// Get the raw offset of a pointer
+	unsigned char const * getAddr() const {
+		unsigned char const * first  = reinterpret_cast<unsigned char const *>(&func);
 		return reinterpret_cast<unsigned char *>(*first);
+		}
+		
+	const long long int getOffset() const {
+		return reinterpret_cast<size_t>(getAddr());
 		}
 	};
 
@@ -113,16 +113,23 @@ public:
 		for (RegNamespace * RN : classes) delete RN;
 		if (thisClass) delete thisClass;
 		}
-	
-	template <typename T>
+		
+	template <typename CT = sttr::NullType, typename T = sttr::NullType>
 	RegNamespace & regField(T v, const char * _name) {
-		RegBase * R = new Reg<T>(v,_name);
-		R->isFunction = std::is_function<typename std::remove_pointer<T>::type>::value;
-		R->isVariable = !R->isFunction;
-		R->isConst = std::is_const<typename std::remove_pointer<T>::type>::value;
-		R->isStatic = parent && !std::is_member_pointer<T>::value;
+		// for registration of anything
+		RegBase * R = new Reg<T, CT>(v,_name);
+		R->isFunction = sttr::is_function<T>::value;
+		R->isVariable = sttr::is_variable<T>::value;
+		R->isConst = sttr::is_const<T>::value;
+		R->isStatic = sttr::is_static<T>::value;
+		R->mNamespace = this;
 		members.push_back(R);
 		return *this;
+		}
+	template <typename CT, typename T>
+	RegNamespace & regField(T CT::* v, const char * _name) {
+		// easy reigstation of class members
+		return regField<CT,T CT::*>(v, _name);
 		}
 		
 	RegNamespace & setUserFlags (const uint32_t & userFlags) {
@@ -151,7 +158,7 @@ public:
 	RegNamespace & beginClass(const char * _name) {
 		RegNamespace * R = new RegNamespace(_name);
 		R->parent = this;
-		R->thisClass = new Reg<T*>(NULL, _name);
+		R->thisClass = new Reg<T*, sttr::NullType>(NULL, _name);
 		classes.push_back(R);
 		return *(classes[classes.size()-1]);
 		}
@@ -200,7 +207,7 @@ public:
 	std::string toString(const int indent=0) {
 		std::string r = "";
 		for (RegBase * RB : members) {
-			r += std::string(indent,'\t') + "\tField: "+ RB->name + "\tTypedef: " + RB->getTypeName() + " isStatic: " + STTR_BTOS(RB->isStatic) + " , isConst: " + STTR_BTOS(RB->isConst) + ", isFunction: " + STTR_BTOS(RB->isFunction) + ", isVariable: " + STTR_BTOS(RB->isVariable) + "\n";
+			r += std::string(indent,'\t') + "\tField: "+ RB->name + "\tTypedef: " + RB->getTypeName() + ", Pointing To: " + RB->getTypePointingTo()+ ", isStatic: " + STTR_BTOS(RB->isStatic) + " , isConst: " + STTR_BTOS(RB->isConst) + ", isFunction: " + STTR_BTOS(RB->isFunction) + ", isVariable: " + STTR_BTOS(RB->isVariable) + "\n";
 			}
 		for (RegNamespace * RS : classes) {
 			r += std::string(indent,'\t') + "class " + RS->name + ":\n";
@@ -210,6 +217,12 @@ public:
 		}
 	
 	};
+	
+RegNamespace * getGlobalNamespace() {
+	static RegNamespace R("global");
+	return &R;
+	}
+	
 }
 
 

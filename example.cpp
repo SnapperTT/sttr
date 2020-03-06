@@ -8,8 +8,8 @@
 #include "sttr_visitor.h"
 class MyVisitor : public sttr::Visitor_Base {
 public:
-	template<typename T>
-	void visit(sttr::Reg<T> * RB) {
+	template<typename T, typename CT>
+	void visit(sttr::Reg<T, CT> * RB) {
 		//std::cout << "Visiting! " << sttr::getTypeName<T>() << std::endl;
 		}
 	
@@ -84,6 +84,13 @@ int main(int argc, char ** argv) {
 	
 	// Dump function - good for debugging
 	std::cout << std::endl << "DUMP: " << std::endl << mNamespace.toString() << std::endl;
+	
+	// Uncomment to force functions to be not inlined when compiling with -O2
+	// For inspecting functions' assembly with objdump
+	//auto dontInlineMeBro = &sttr::getTypeName<double>;
+	//std::cout << ((void*) dontInlineMeBro) << std::endl;
+	//auto dontInlineMeBro2 = &sttr::getTypeName<int>;
+	//std::cout << ((void*) dontInlineMeBro2) << std::endl;
 	
 	return 1;
 	}

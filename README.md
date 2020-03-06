@@ -99,7 +99,8 @@ Everything is in the sttr namespace
 
 ### Free Functions
 * `template <typename T> std::string getTypeName()` - 
-Converts a type to a string
+* `template <typename T> const char * getTypeName()` - 
+Converts a type to a string. If you are compiling with c++17 or later the const char* version will be used which is resolved at compile time
 
 * `template <typename T> char * getTypeSignature()` - 
 Converts a type to a unique pointer. Used to identify classes without RTTI
@@ -126,7 +127,9 @@ Class derived from RegBase, used to store pointers to registered fields (eg, if 
 ### RegNamespace
 `class RegNamespace` - Tree-like container to store registered stuff. Also used to represent a registered class. Most of these methods return the object that you called it from so that you can chain calls (`mNamespace.addField().setUserFlags().addField(). ... etc`).
 
-* `template <typename T> RegNamespace & regField(T v, const char * _name)` - Registers a field. This may be a function, a variable, either belonging to a class or free.
+* `RegNamespace * getGlobalNamespace()` - singleton instance of a namespace. Useful for acting as a global root for a tree. You do not have to use this, but it is convenient if you only need one global tree for everything
+
+* `template <typename T> RegNamespace & regField(T v, const char * _name)` - Registers a field. This may be a function, a variable, either belonging to a class or free. If you are registering a static variable or functions you need to reigister the class type too with `regField<classType, fieldType>(&classType::field, name)`.
 
 * `RegNamespace & setUserFlags (const uint32_t & userFlags)` - Sets field->userFlags for the last added field. Will trip an assert if no fields are present
 * `RegNamespace & setUserString (const std::string & userString)` - Sets field->userString for the last added field. Will trip an assert if no fields are present

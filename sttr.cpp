@@ -22,18 +22,8 @@ namespace sttr {
 #include "sttr.h"
 #define LZZ_INLINE inline
 namespace sttr {
-  std::string getTypeName_filterTypeOut (std::string const & in) {
-	// Find "with T = " and stop when reaching ";"
-	size_t start = in.find("T = ");
-	if (start == std::string::npos) return in;
-	std::string r = in.substr(start+4);
-	size_t end = r.find(";");
-	return r.substr(0,end);
-	}
-}
-namespace sttr {
   RegBase::RegBase (char const * _name)
-    : name (_name), isStatic (false), isConst (false), isVariable (false), isFunction (false), userFlags (0), userString (""), userData (NULL) {}
+    : name (_name), isStatic (false), isConst (false), isVariable (false), isFunction (false), mNamespace (NULL), userFlags (0), userString (""), userData (NULL) {}
 }
 namespace sttr {
   RegBase::~ RegBase () {}
@@ -45,7 +35,13 @@ namespace sttr {
   std::string RegBase::getTypeName () { return ""; }
 }
 namespace sttr {
-  unsigned char const * RegBase::getAddr () { return 0; }
+  std::string RegBase::getTypePointingTo () { return ""; }
+}
+namespace sttr {
+  unsigned char const * RegBase::getAddr () const { return 0; }
+}
+namespace sttr {
+  long long int const RegBase::getOffset () const { return 0; }
 }
 namespace sttr {
   RegNamespace::RegNamespace (char const * _name)
@@ -135,13 +131,19 @@ namespace sttr {
   std::string RegNamespace::toString (int const indent) {
 	std::string r = "";
 	for (RegBase * RB : members) {
-		r += std::string(indent,'\t') + "\tField: "+ RB->name + "\tTypedef: " + RB->getTypeName() + " isStatic: " + STTR_BTOS(RB->isStatic) + " , isConst: " + STTR_BTOS(RB->isConst) + ", isFunction: " + STTR_BTOS(RB->isFunction) + ", isVariable: " + STTR_BTOS(RB->isVariable) + "\n";
+		r += std::string(indent,'\t') + "\tField: "+ RB->name + "\tTypedef: " + RB->getTypeName() + ", Pointing To: " + RB->getTypePointingTo()+ ", isStatic: " + STTR_BTOS(RB->isStatic) + " , isConst: " + STTR_BTOS(RB->isConst) + ", isFunction: " + STTR_BTOS(RB->isFunction) + ", isVariable: " + STTR_BTOS(RB->isVariable) + "\n";
 		}
 	for (RegNamespace * RS : classes) {
 		r += std::string(indent,'\t') + "class " + RS->name + ":\n";
 		r += RS->toString(indent+1);
 		}
 	return r;
+	}
+}
+namespace sttr {
+  RegNamespace * getGlobalNamespace () {
+	static RegNamespace R("global");
+	return &R;
 	}
 }
 #undef LZZ_INLINE

@@ -25,15 +25,14 @@
 
 //#define STTR_VISITORS
 // 	STTR_ADD_VISITOR(Typename_Extractor_Visitor);
+namespace sttr {
+	class RegNamespace;
+	}
+
+// Macro for registering field
+#define STTR_REG(C,X) regField<C>(&C::X,#X)
 
 #define LZZ_INLINE inline
-namespace sttr {
-  std::string getTypeName_filterTypeOut (std::string const & in);
-}
-namespace sttr {
-  template <typename T>
-  std::string getTypeName ();
-}
 namespace sttr {
   class RegBase {
   public:
@@ -42,6 +41,7 @@ namespace sttr {
     bool isConst;
     bool isVariable;
     bool isFunction;
+    RegNamespace * mNamespace;
     uint32_t userFlags;
     std::string userString;
     void * userData;
@@ -49,11 +49,13 @@ namespace sttr {
     virtual ~ RegBase ();
     virtual void visit (Visitor_Base * V);
     virtual std::string getTypeName ();
-    virtual unsigned char const * getAddr ();
+    virtual std::string getTypePointingTo ();
+    virtual unsigned char const * getAddr () const;
+    virtual long long int const getOffset () const;
   };
 }
 namespace sttr {
-  template <typename T>
+  template <typename T, typename CT>
   class Reg : public RegBase {
   public:
     T func;
@@ -61,7 +63,9 @@ namespace sttr {
     virtual ~ Reg ();
     void visit (Visitor_Base * v);
     std::string getTypeName ();
-    unsigned char const * getAddr ();
+    std::string getTypePointingTo ();
+    unsigned char const * getAddr () const;
+    long long int const getOffset () const;
   };
 }
 namespace sttr {
@@ -74,8 +78,10 @@ namespace sttr {
     RegBase * thisClass;
     RegNamespace (char const * _name);
     ~ RegNamespace ();
-    template <typename T>
+    template <typename CT = sttr::NullType, typename T = sttr::NullType>
     RegNamespace & regField (T v, char const * _name);
+    template <typename CT, typename T>
+    RegNamespace & regField (T CT::* v, char const * _name);
     RegNamespace & setUserFlags (uint32_t const & userFlags);
     RegNamespace & setUserString (std::string const & userString);
     RegNamespace & setUserData (void * userData);
@@ -90,23 +96,20 @@ namespace sttr {
   };
 }
 namespace sttr {
-  template <typename T>
-  std::string getTypeName () {
-	return sttr::getTypeName_filterTypeOut(__PRETTY_FUNCTION__);
-	}
+  RegNamespace * getGlobalNamespace ();
 }
 namespace sttr {
-  template <typename T>
-  Reg <T>::Reg (T v, char const * _name)
+  template <typename T, typename CT>
+  Reg <T, CT>::Reg (T v, char const * _name)
     : RegBase (_name), func (v) {}
 }
 namespace sttr {
-  template <typename T>
-  Reg <T>::~ Reg () {}
+  template <typename T, typename CT>
+  Reg <T, CT>::~ Reg () {}
 }
 namespace sttr {
-  template <typename T>
-  void Reg <T>::visit (Visitor_Base * v) {
+  template <typename T, typename CT>
+  void Reg <T, CT>::visit (Visitor_Base * v) {
 	// Upcast and get the right visitor
 	#ifdef STTR_VISITORS
 		STTR_VISITORS
@@ -117,26 +120,45 @@ namespace sttr {
 	}
 }
 namespace sttr {
-  template <typename T>
-  std::string Reg <T>::getTypeName () { return sttr::getTypeName<T>(); }
+  template <typename T, typename CT>
+  std::string Reg <T, CT>::getTypeName () { return sttr::getTypeName<T>(); }
 }
 namespace sttr {
-  template <typename T>
-  unsigned char const * Reg <T>::getAddr () {
-	unsigned char const * first  = reinterpret_cast<unsigned char *>(&func);
+  template <typename T, typename CT>
+  std::string Reg <T, CT>::getTypePointingTo () { return sttr::getTypeName<decltype(sttr::getTypePointingTo(func))>(); }
+}
+namespace sttr {
+  template <typename T, typename CT>
+  unsigned char const * Reg <T, CT>::getAddr () const {
+	unsigned char const * first  = reinterpret_cast<unsigned char const *>(&func);
 	return reinterpret_cast<unsigned char *>(*first);
 	}
 }
 namespace sttr {
-  template <typename T>
+  template <typename T, typename CT>
+  long long int const Reg <T, CT>::getOffset () const {
+	return reinterpret_cast<size_t>(getAddr());
+	}
+}
+namespace sttr {
+  template <typename CT, typename T>
   RegNamespace & RegNamespace::regField (T v, char const * _name) {
-	RegBase * R = new Reg<T>(v,_name);
-	R->isFunction = std::is_function<typename std::remove_pointer<T>::type>::value;
-	R->isVariable = !R->isFunction;
-	R->isConst = std::is_const<typename std::remove_pointer<T>::type>::value;
-	R->isStatic = parent && !std::is_member_pointer<T>::value;
+	// for registration of anything
+	RegBase * R = new Reg<T, CT>(v,_name);
+	R->isFunction = sttr::is_function<T>::value;
+	R->isVariable = sttr::is_variable<T>::value;
+	R->isConst = sttr::is_const<T>::value;
+	R->isStatic = sttr::is_static<T>::value;
+	R->mNamespace = this;
 	members.push_back(R);
 	return *this;
+	}
+}
+namespace sttr {
+  template <typename CT, typename T>
+  RegNamespace & RegNamespace::regField (T CT::* v, char const * _name) {
+	// easy reigstation of class members
+	return regField<CT,T CT::*>(v, _name);
 	}
 }
 namespace sttr {
@@ -144,7 +166,7 @@ namespace sttr {
   RegNamespace & RegNamespace::beginClass (char const * _name) {
 	RegNamespace * R = new RegNamespace(_name);
 	R->parent = this;
-	R->thisClass = new Reg<T*>(NULL, _name);
+	R->thisClass = new Reg<T*, sttr::NullType>(NULL, _name);
 	classes.push_back(R);
 	return *(classes[classes.size()-1]);
 	}
