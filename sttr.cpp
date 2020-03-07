@@ -29,6 +29,9 @@ namespace sttr {
   RegBase::~ RegBase () {}
 }
 namespace sttr {
+  void * RegBase::construct () { return (void *) 0; }
+}
+namespace sttr {
   void RegBase::visit (Visitor_Base * V) {}
 }
 namespace sttr {
@@ -45,7 +48,7 @@ namespace sttr {
 }
 namespace sttr {
   RegNamespace::RegNamespace (char const * _name)
-    : parent (NULL), name (_name), thisClass (NULL) {}
+    : parent (NULL), name (_name), thisClass (NULL), thisClassSig (NULL) {}
 }
 namespace sttr {
   RegNamespace::~ RegNamespace () {
@@ -88,6 +91,14 @@ namespace sttr {
 	}
 }
 namespace sttr {
+  void * RegNamespace::construct_retVoidPtr () {
+	if (thisClass) {
+		return thisClass->construct();
+		}
+	return NULL;
+	}
+}
+namespace sttr {
   RegNamespace & RegNamespace::findClass (char const * class_name) {
 	RegNamespace * R = findClassPointer(class_name);
 	assert(R && "sttr::RegNamespace::findClass : class not found");
@@ -104,6 +115,23 @@ namespace sttr {
 		}
 	for (RegNamespace * R : classes) {
 		RegNamespace * R2 = R->findClassPointer(class_name);
+		if (R2)
+		return R2;
+		}
+	return NULL;
+	}
+}
+namespace sttr {
+  RegNamespace * RegNamespace::findClassPointerBySig (void * target) {
+	if (target == thisClassSig) return this;
+	for (RegNamespace * R : classes) {
+		if (R->thisClass) {
+		if (R->thisClassSig == target)
+			return R;
+		}
+		}
+	for (RegNamespace * R : classes) {
+		RegNamespace * R2 = R->findClassPointerBySig(target);
 		if (R2)
 		return R2;
 		}

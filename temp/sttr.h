@@ -19,6 +19,7 @@
 #endif
 	
 #define STTR_BTOS(B) (B ? "true" : "false")
+#define STTR_CLASS_SIG() virtual void * sttr_getClassSig() { return (void*) sttr::getTypeSignature<decltype(*this)>(); }
 
 // STTR_VISITORS Must be defined before #include "sttr.h"
 //#define STTR_VISITORS //	STTR_ADD_VISITOR(visitoclass_x) //	STTR_ADD_VISITOR(visitoclass_y) //	STTR_ADD_VISITOR(visitoclass_z) 
@@ -47,12 +48,21 @@ namespace sttr {
     void * userData;
     RegBase (char const * _name);
     virtual ~ RegBase ();
+    virtual void * construct ();
     virtual void visit (Visitor_Base * V);
     virtual std::string getTypeName ();
     virtual std::string getTypePointingTo ();
     virtual unsigned char const * getAddr () const;
     virtual long long int const getOffset () const;
   };
+}
+namespace sttr {
+  template <typename T>
+  void * construct_worker (T func, std::false_type isVariable);
+}
+namespace sttr {
+  template <typename T>
+  void * construct_worker (T func, std::true_type isVariable);
 }
 namespace sttr {
   template <typename T, typename CT>
@@ -62,6 +72,7 @@ namespace sttr {
     Reg (T v, char const * _name);
     virtual ~ Reg ();
     void visit (Visitor_Base * v);
+    void * construct ();
     std::string getTypeName ();
     std::string getTypePointingTo ();
     unsigned char const * getAddr () const;
@@ -76,6 +87,7 @@ namespace sttr {
     std::vector <RegBase*> members;
     std::vector <RegNamespace*> classes;
     RegBase * thisClass;
+    void * thisClassSig;
     RegNamespace (char const * _name);
     ~ RegNamespace ();
     template <typename CT = sttr::NullType, typename T = sttr::NullType>
@@ -88,8 +100,12 @@ namespace sttr {
     template <typename T>
     RegNamespace & beginClass (char const * _name);
     RegNamespace & endClass ();
+    void * construct_retVoidPtr ();
+    template <typename T>
+    T * construct ();
     RegNamespace & findClass (char const * class_name);
     RegNamespace * findClassPointer (char const * class_name);
+    RegNamespace * findClassPointerBySig (void * target);
     void visitRecursive (Visitor_Base * v);
     void visit (Visitor_Base * v);
     std::string toString (int const indent = 0);
@@ -97,6 +113,18 @@ namespace sttr {
 }
 namespace sttr {
   RegNamespace * getGlobalNamespace ();
+}
+namespace sttr {
+  template <typename T>
+  void * construct_worker (T func, std::false_type isVariable) { return NULL; }
+}
+namespace sttr {
+  template <typename T>
+  void * construct_worker (T func, std::true_type isVariable) {
+	using TBase = typename std::remove_pointer<T>::type;
+	std::cout << "constructing zzz: " << sttr::getTypeName<TBase>() << std::endl;
+	return (void*) new TBase;
+	}
 }
 namespace sttr {
   template <typename T, typename CT>
@@ -117,6 +145,12 @@ namespace sttr {
 		#warning STTR_VISITORS macro not defined! To suppress this warning define it as an empty string "#define STTR_VISITORS". To add a visitor use #define STTR_VISITORS STTR_ADD_VISITOR(visitoclass_type) STTR_ADD_VISITOR(anothevisitoclass_type) ... etc.
 	#endif
 	v->visit(this);
+	}
+}
+namespace sttr {
+  template <typename T, typename CT>
+  void * Reg <T, CT>::construct () {
+	return construct_worker(func, sttr::is_variable<T>());
 	}
 }
 namespace sttr {
@@ -167,8 +201,15 @@ namespace sttr {
 	RegNamespace * R = new RegNamespace(_name);
 	R->parent = this;
 	R->thisClass = new Reg<T*, sttr::NullType>(NULL, _name);
+	R->thisClassSig = sttr::getTypeSignature<T>();
 	classes.push_back(R);
 	return *(classes[classes.size()-1]);
+	}
+}
+namespace sttr {
+  template <typename T>
+  T * RegNamespace::construct () {
+	return (T*) construct_retVoidPtr();
 	}
 }
 #undef LZZ_INLINE
