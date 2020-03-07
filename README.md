@@ -136,8 +136,11 @@ Class derived from RegBase, used to store pointers to registered fields (eg, if 
 * `RegNamespace & setUserData (void * userData)` - Sets field->userData for the last added field. Does not take ownership of userData, userData will not be deleted on destruction
 * `template<typename T> RegNamespace & beginClass(const char * _name)` - Starts a class. A class is represented internally as a RegNamespace, so this returns the new one created. 
 * `RegNamespace & endClass()` - Ends the class you're working on
-* `RegNamespace & findClass(const char * class_name)` - Searches for a class. Will trip an assert if target is not found.
-* `RegNamespace * findClassPointer(const char * class_name)` - Searches for a class. Will NOT trip an assert if target is not found, returns a pointer
+* `RegNamespace & findClass(const char * class_name)` - Searches for a class by name. Will trip an assert if target is not found.
+* `RegNamespace * findClassPointer(const char * class_name)` - Searches for a class by name. Will NOT trip an assert if target is not found, returns a pointer
+* `RegNamespace * findClassPointer(void * class_signature)` - Searches for a class by signature (use (void*) sttr::getTypeSignature<T>() to get one). Will NOT trip an assert if target is not found, returns a pointer
+* `template<typename T> T* construct()` - If this is a class and this is trivially constructable, construct an instance of the class with `new T;`
+* `void* construct_retVoidPtr()` - Same as above, but returns `new T` casted to a void pointer.
 * `std::string toString()` - Recursively prints out the layout of the namespace tree
 * `void visit(sttr::Visitor_Base * v)` - Visits all registered members and classes with v
 * `void visitRecursive(sttr::Visitor_Base * v)` - Recursively visits all registered members and classes with v
