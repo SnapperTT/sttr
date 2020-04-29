@@ -134,6 +134,11 @@ Class derived from RegBase, used to store pointers to registered fields (eg, if 
 * `RegNamespace & setUserFlags (const uint32_t & userFlags)` - Sets field->userFlags for the last added field. Will trip an assert if no fields are present
 * `RegNamespace & setUserString (const std::string & userString)` - Sets field->userString for the last added field. Will trip an assert if no fields are present
 * `RegNamespace & setUserData (void * userData)` - Sets field->userData for the last added field. Does not take ownership of userData, userData will not be deleted on destruction
+* `RegNamespace & setUserFlags (const uint32_t & userFlags)` - If this namespace is a class, sets flags for that class. Else trips an assert.
+* `RegNamespace & setUserString (const std::string & userString)` - If this namespace is a class, sets the userString for that class. Else trips an assert.
+* `RegNamespace & setUserData (void * userData)` - If this namespace is a class, sets the userdata for that class. Else trips an assert.
+
+
 * `template<typename T> RegNamespace & beginClass(const char * _name)` - Starts a class. A class is represented internally as a RegNamespace, so this returns the new one created. 
 * `RegNamespace & endClass()` - Ends the class you're working on
 * `RegNamespace & findClass(const char * class_name)` - Searches for a class by name. Will trip an assert if target is not found.

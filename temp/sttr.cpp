@@ -5,7 +5,7 @@
 #define LZZ_INLINE inline
 namespace sttr {
   RegBase::RegBase (char const * _name)
-    : name (_name), isStatic (false), isConst (false), isVariable (false), isFunction (false), mNamespace (NULL), userFlags (0), userString (""), userData (NULL) {}
+    : name (_name), isStatic (false), isConst (false), isVariable (false), isFunction (false), nullValueSet (false), nullValueValue (0.0), mNamespace (NULL), userFlags (0), userString (""), userData (NULL) {}
 }
 namespace sttr {
   RegBase::~ RegBase () {}
@@ -67,6 +67,30 @@ namespace sttr {
 	}
 }
 namespace sttr {
+  RegNamespace & RegNamespace::setClassUserFlags (uint32_t const & userFlags) {
+	// Sets the userFlags for the last inserted member
+	assert (thisClass && "Trying to sttr::RegNamespace::setClassUserFlags with a namespace that is not a class");
+	thisClass->userFlags = userFlags;
+	return *this;
+	}
+}
+namespace sttr {
+  RegNamespace & RegNamespace::setClassUserString (std::string const & userString) {
+	// Sets the userString for the last inserted member
+	assert (thisClass && "Trying to sttr::RegNamespace::setClassUserString with a namespace that is not a class");
+	thisClass->userString = userString;
+	return *this;
+	}
+}
+namespace sttr {
+  RegNamespace & RegNamespace::setClassUserData (void * userData) {
+	// Sets the userString for the last inserted member
+	assert (thisClass && "Trying to sttr::RegNamespace::setClassUserData with a namespace that is not a class");
+	thisClass->userData = userData;
+	return *this;
+	}
+}
+namespace sttr {
   RegNamespace & RegNamespace::endClass () {
 	if (parent) return *parent;
 	return *this;
@@ -74,9 +98,8 @@ namespace sttr {
 }
 namespace sttr {
   void * RegNamespace::construct_retVoidPtr () {
-	if (thisClass) {
+	if (thisClass)
 		return thisClass->construct();
-		}
 	return NULL;
 	}
 }
@@ -121,6 +144,24 @@ namespace sttr {
 	}
 }
 namespace sttr {
+  RegNamespace * RegNamespace::getBaseClass () {
+	// Returns the base class of this class
+	if (thisClass && parent) {
+		if (parent->thisClass)
+		return parent->getBaseClass();
+		}
+	return this;
+	}
+}
+namespace sttr {
+  bool RegNamespace::isDerivedFromSig (void * target) {
+	// Returns true if this type is a instance of or derived from target
+	if (thisClassSig == target) return true;
+	if (parent) return parent->isDerivedFromSig(target);
+	return false;
+	}
+}
+namespace sttr {
   void RegNamespace::visitRecursive (Visitor_Base * v) {
 	// Recusively visits all classes and members
 	for (RegNamespace * R : classes) {
@@ -131,10 +172,9 @@ namespace sttr {
 }
 namespace sttr {
   void RegNamespace::visit (Visitor_Base * v) {
-	// Recusively visits members
-	for (RegBase * RB : members) {
+	// Visits this class. Does not account for polymorthisim
+	for (RegBase * RB : members)
 		RB->visit(v);
-		}
 	}
 }
 namespace sttr {

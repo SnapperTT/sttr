@@ -15,7 +15,8 @@
 #endif
 		
 #define STTR_BTOS(B) (B ? "true" : "false")
-#define STTR_CLASS_SIG() virtual void * sttr_getClassSig() { return (void*) sttr::getTypeSignature<decltype(*this)>(); }
+#define STTR_CLASS_SIG(X) virtual void * sttr_getClassSig() const { return (void*) sttr::getTypeSignature<X>(); } \
+						virtual const char * const sttr_getClassName() const { return sttr::getTypeName<X>(); }
 
 // STTR_VISITORS Must be defined before #include "sttr.h"
 //#define STTR_VISITORS \
@@ -48,6 +49,10 @@ public:
 	bool isConst;
 	bool isVariable;
 	bool isFunction;
+	
+	// Null values
+	bool nullValueSet;
+	double nullValueValue;
 	// What owns this?
 	RegNamespace * mNamespace;
 	
@@ -56,7 +61,7 @@ public:
 	std::string userString;
 	void * userData;
 	
-	RegBase(const char * _name) : name(_name), isStatic(false), isConst(false), isVariable(false), isFunction(false), mNamespace(NULL), userFlags(0), userString(""), userData(NULL) {}
+	RegBase(const char * _name) : name(_name), isStatic(false), isConst(false), isVariable(false), isFunction(false), nullValueSet(false), nullValueValue(0.0), mNamespace(NULL), userFlags(0), userString(""), userData(NULL) {}
 	virtual ~RegBase(){}
 	
 	virtual void* construct() { return (void *) 0; }
@@ -170,7 +175,26 @@ public:
 		R->userData = userData;
 		return *this;
 		}
-
+		
+	RegNamespace & setClassUserFlags (const uint32_t & userFlags) {
+		// Sets the userFlags for the last inserted member
+		assert (thisClass && "Trying to sttr::RegNamespace::setClassUserFlags with a namespace that is not a class");
+		thisClass->userFlags = userFlags;
+		return *this;
+		}
+	RegNamespace & setClassUserString (const std::string & userString) {
+		// Sets the userString for the last inserted member
+		assert (thisClass && "Trying to sttr::RegNamespace::setClassUserString with a namespace that is not a class");
+		thisClass->userString = userString;
+		return *this;
+		}
+	RegNamespace & setClassUserData (void * userData) {
+		// Sets the userString for the last inserted member
+		assert (thisClass && "Trying to sttr::RegNamespace::setClassUserData with a namespace that is not a class");
+		thisClass->userData = userData;
+		return *this;
+		}
+		
 	template<typename T>
 	RegNamespace & beginClass(const char * _name) {
 		RegNamespace * R = new RegNamespace(_name);
@@ -186,16 +210,28 @@ public:
 		return *this;
 		}
 	
+	// Constructs an instance of this class. Does no safety checking!
 	void* construct_retVoidPtr() {
-		if (thisClass) {
+		if (thisClass)
 			return thisClass->construct();
-			}
 		return NULL;
 		}
 	
+	// Constructs and casts to T*. Does no safety checking!
 	template<typename T>
 	T * construct() {
 		return (T*) construct_retVoidPtr();
+		}
+	
+	// Returns a T* if V is a child class of T
+	template<typename T, typename V>
+	T * safeUpcast(V * v) {
+		std::cout << "safe upcast: " << sttr::getTypeName<V>() << " to " << sttr::getTypeName<T>() << ", actual class = " << findClassPointerBySig(v->sttr_getClassSig())->name << std::endl;
+		RegNamespace * R = findClassPointerBySig(sttr::getTypeSignature<T>());
+		if (!R) return NULL;
+		std::cout << "found R!! : " << sttr::getTypeName<V>() << " to " << sttr::getTypeName<T>() << std::endl;
+		if (R->isDerivedFromSig(v->sttr_getClassSig())) return (T*) v;
+		return NULL;
 		}
 	
 	RegNamespace & findClass(const char * class_name) {
@@ -234,6 +270,22 @@ public:
 			}
 		return NULL;
 		}
+		
+	RegNamespace * getBaseClass() {
+		// Returns the base class of this class
+		if (thisClass && parent) {
+			if (parent->thisClass)
+				return parent->getBaseClass();
+			}
+		return this;
+		}
+		
+	bool isDerivedFromSig(void * target) {
+		// Returns true if this type is a instance of or derived from target
+		if (thisClassSig == target) return true;
+		if (parent) return parent->isDerivedFromSig(target);
+		return false;
+		}
 	
 	void visitRecursive(Visitor_Base * v) {
 		// Recusively visits all classes and members
@@ -243,13 +295,26 @@ public:
 		visit(v);
 		}
 		
-	void visit(Visitor_Base * v) {
-		// Recusively visits members
-		for (RegBase * RB : members) {
-			RB->visit(v);
+	template <typename T>
+	void visit (Visitor_Base * v, T * mClass) {
+		// Calls visit for T. Requires sttr_getClassSig() to be defined for all classes in the chain
+		RegNamespace * R = findClassPointerBySig(mClass->sttr_getClassSig());
+		// Find the base class
+		//std::cout << "mClass->sttr_getClassSig() " << mClass->sttr_getClassSig() << " this " << thisClass->name << " sig: " << thisClassSig <<  " R " << R << std::endl;
+		if (!R) return;
+		while (R->thisClass) {
+			R->visit(v);
+			R = R->parent;
+			if (!R) break;
 			}
 		}
-		
+	
+	void visit(Visitor_Base * v) {
+		// Visits this class. Does not account for polymorthisim
+		for (RegBase * RB : members)
+			RB->visit(v);
+		}
+	
 	std::string toString(const int indent=0) {
 		std::string r = "";
 		for (RegBase * RB : members) {

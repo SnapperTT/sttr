@@ -19,7 +19,7 @@
 #endif
 	
 #define STTR_BTOS(B) (B ? "true" : "false")
-#define STTR_CLASS_SIG() virtual void * sttr_getClassSig() { return (void*) sttr::getTypeSignature<decltype(*this)>(); }
+#define STTR_CLASS_SIG(X) virtual void * sttr_getClassSig() const { return (void*) sttr::getTypeSignature<X>(); } 			virtual const char * const sttr_getClassName() const { return sttr::getTypeName<X>(); }
 
 // STTR_VISITORS Must be defined before #include "sttr.h"
 //#define STTR_VISITORS //	STTR_ADD_VISITOR(visitoclass_x) //	STTR_ADD_VISITOR(visitoclass_y) //	STTR_ADD_VISITOR(visitoclass_z) 
@@ -42,6 +42,8 @@ namespace sttr {
     bool isConst;
     bool isVariable;
     bool isFunction;
+    bool nullValueSet;
+    double nullValueValue;
     RegNamespace * mNamespace;
     uint32_t userFlags;
     std::string userString;
@@ -97,16 +99,25 @@ namespace sttr {
     RegNamespace & setUserFlags (uint32_t const & userFlags);
     RegNamespace & setUserString (std::string const & userString);
     RegNamespace & setUserData (void * userData);
+    RegNamespace & setClassUserFlags (uint32_t const & userFlags);
+    RegNamespace & setClassUserString (std::string const & userString);
+    RegNamespace & setClassUserData (void * userData);
     template <typename T>
     RegNamespace & beginClass (char const * _name);
     RegNamespace & endClass ();
     void * construct_retVoidPtr ();
     template <typename T>
     T * construct ();
+    template <typename T, typename V>
+    T * safeUpcast (V * v);
     RegNamespace & findClass (char const * class_name);
     RegNamespace * findClassPointer (char const * class_name);
     RegNamespace * findClassPointerBySig (void * target);
+    RegNamespace * getBaseClass ();
+    bool isDerivedFromSig (void * target);
     void visitRecursive (Visitor_Base * v);
+    template <typename T>
+    void visit (Visitor_Base * v, T * mClass);
     void visit (Visitor_Base * v);
     std::string toString (int const indent = 0);
   };
@@ -122,7 +133,6 @@ namespace sttr {
   template <typename T>
   void * construct_worker (T func, std::true_type isVariable) {
 	using TBase = typename std::remove_pointer<T>::type;
-	std::cout << "constructing zzz: " << sttr::getTypeName<TBase>() << std::endl;
 	return (void*) new TBase;
 	}
 }
@@ -210,6 +220,32 @@ namespace sttr {
   template <typename T>
   T * RegNamespace::construct () {
 	return (T*) construct_retVoidPtr();
+	}
+}
+namespace sttr {
+  template <typename T, typename V>
+  T * RegNamespace::safeUpcast (V * v) {
+	std::cout << "safe upcast: " << sttr::getTypeName<V>() << " to " << sttr::getTypeName<T>() << ", actual class = " << findClassPointerBySig(v->sttr_getClassSig())->name << std::endl;
+	RegNamespace * R = findClassPointerBySig(sttr::getTypeSignature<T>());
+	if (!R) return NULL;
+	std::cout << "found R!! : " << sttr::getTypeName<V>() << " to " << sttr::getTypeName<T>() << std::endl;
+	if (R->isDerivedFromSig(v->sttr_getClassSig())) return (T*) v;
+	return NULL;
+	}
+}
+namespace sttr {
+  template <typename T>
+  void RegNamespace::visit (Visitor_Base * v, T * mClass) {
+	// Calls visit for T. Requires sttr_getClassSig() to be defined for all classes in the chain
+	RegNamespace * R = findClassPointerBySig(mClass->sttr_getClassSig());
+	// Find the base class
+	//std::cout << "mClass->sttr_getClassSig() " << mClass->sttr_getClassSig() << " this " << thisClass->name << " sig: " << thisClassSig <<  " R " << R << std::endl;
+	if (!R) return;
+	while (R->thisClass) {
+		R->visit(v);
+		R = R->parent;
+		if (!R) break;
+		}
 	}
 }
 #undef LZZ_INLINE
