@@ -48,7 +48,7 @@ namespace sttr {
 }
 namespace sttr {
   RegNamespace::RegNamespace (char const * _name)
-    : parent (NULL), name (_name), thisClass (NULL), thisClassSig (NULL) {}
+    : parent (NULL), name (_name), thisClass (NULL), thisClassSig (NULL), uninstantiatedParent (NULL) {}
 }
 namespace sttr {
   RegNamespace::~ RegNamespace () {
@@ -132,9 +132,10 @@ namespace sttr {
   RegNamespace * RegNamespace::findClassPointer (char const * class_name) {
 	for (RegNamespace * R : classes) {
 		if (R->thisClass) {
+		std::cout << "comp: " << class_name << " " << R->thisClass->name << std::endl;
 		if (!strcmp(R->thisClass->name, class_name))
 			return R;
-		}	
+		}
 		}
 	for (RegNamespace * R : classes) {
 		RegNamespace * R2 = R->findClassPointer(class_name);

@@ -90,6 +90,7 @@ namespace sttr {
     std::vector <RegNamespace*> classes;
     RegBase * thisClass;
     void * thisClassSig;
+    void * uninstantiatedParent;
     RegNamespace (char const * _name);
     ~ RegNamespace ();
     template <typename CT = sttr::NullType, typename T = sttr::NullType>
@@ -104,6 +105,8 @@ namespace sttr {
     RegNamespace & setClassUserData (void * userData);
     template <typename T>
     RegNamespace & beginClass (char const * _name);
+    template <typename BASE, typename DERIVED>
+    RegNamespace & deriveClass (char const * name);
     RegNamespace & endClass ();
     void * construct_retVoidPtr ();
     template <typename T>
@@ -213,7 +216,39 @@ namespace sttr {
 	R->thisClass = new Reg<T*, sttr::NullType>(NULL, _name);
 	R->thisClassSig = sttr::getTypeSignature<T>();
 	classes.push_back(R);
-	return *(classes[classes.size()-1]);
+	
+	// Find any children and add them
+	RegNamespace * Base = getBaseClass();
+	void * thisSig = sttr::getTypeSignature<T>();
+	for (size_t i = 0; i < Base->classes.size(); ++i) {
+		if (Base->classes[i]->uninstantiatedParent == thisSig) {
+		Base->classes[i]->uninstantiatedParent = NULL;
+		R->classes.push_back(Base->classes[i]);
+		Base->classes[i]->parent = R;
+		Base->classes.erase(Base->classes.begin() + i);
+		--i;
+		}
+		}
+	
+	return *R;
+	}
+}
+namespace sttr {
+  template <typename BASE, typename DERIVED>
+  RegNamespace & RegNamespace::deriveClass (char const * name) {
+	/// Can be used to define a class even if its parent hasn't be defined yet.
+	// Should only be used for a base of a tree
+	assert((!parent) && "sttr::RegNamespace::deriveClass being called on a RegNamespace that is not the base (it has a parent)");
+	
+	void* baseSig = sttr::getTypeSignature<BASE>();
+	RegNamespace * R = findClassPointerBySig(baseSig);
+	if (R) {
+		return R->beginClass<DERIVED>(name);
+		}
+		
+	RegNamespace & RR = beginClass<DERIVED>(name);
+	RR.uninstantiatedParent = baseSig;
+	return RR;
 	}
 }
 namespace sttr {

@@ -68,7 +68,7 @@ int main(int argc, char ** argv) {
 		.regField(&C::static_var, "static_var")
 		.regField(&C::static_func, "static_func")
 	.endClass()
-	.findClass("C").beginClass<D>("D") // Class inherritance. Also you can just beginClass<D>("D") inside C
+	.deriveClass<C,D>("D") // Class inherritance. driveClass("D") can safely be called before or after C is registered.
 		.regField(&D::di, "di")
 	.endClass();
 
@@ -140,6 +140,7 @@ Class derived from RegBase, used to store pointers to registered fields (eg, if 
 
 
 * `template<typename T> RegNamespace & beginClass(const char * _name)` - Starts a class. A class is represented internally as a RegNamespace, so this returns the new one created. 
+* `template<typename BASE, typename DERIVED> RegNamespace & deriveClass(const char * _name)` - Starts a class that is derived from another. The BASE does not have to be registered when you call this, you may register it before or later. If the base is not registered then the derived class is added as a child to the root of the class tree and then placed as a child of the base class when that is registered. *WARNING*: Calling `endClass()` after using this may place you in a different position of the class tree than you expect! You should make a seperate `getNamespaceSomehow().beginClass()` call after `endClass()` if using this. 
 * `RegNamespace & endClass()` - Ends the class you're working on
 * `RegNamespace & findClass(const char * class_name)` - Searches for a class by name. Will trip an assert if target is not found.
 * `RegNamespace * findClassPointer(const char * class_name)` - Searches for a class by name. Will NOT trip an assert if target is not found, returns a pointer
