@@ -33,6 +33,10 @@ namespace sttr {
 // Macro for registering field
 #define STTR_REG(C,X) regField<C>(&C::X,#X)
 
+// Workaround for lazy-c++
+#define STTR_VARADIC_TEMPLATE_ARGS1 ...ARGS
+#define STTR_VARADIC_TEMPLATE_ARGS2 ARGS...
+
 #define LZZ_INLINE inline
 namespace sttr {
   class RegBase {
@@ -52,6 +56,7 @@ namespace sttr {
     virtual ~ RegBase ();
     virtual void * construct ();
     virtual void visit (Visitor_Base * V);
+    virtual void visitClass (Visitor_Base * V);
     virtual std::string getTypeName ();
     virtual std::string getTypePointingTo ();
     virtual unsigned char const * getAddr () const;
@@ -74,6 +79,7 @@ namespace sttr {
     Reg (T v, char const * _name);
     virtual ~ Reg ();
     void visit (Visitor_Base * v);
+    void visitClass (Visitor_Base * v);
     void * construct ();
     std::string getTypeName ();
     std::string getTypePointingTo ();
@@ -119,8 +125,9 @@ namespace sttr {
     RegNamespace * getBaseClass ();
     bool isDerivedFromSig (void * target);
     void visitRecursive (Visitor_Base * v);
+    void visitPolymorthic (Visitor_Base * v);
     template <typename T>
-    void visit (Visitor_Base * v, T * mClass);
+    void visitPolymorthic (Visitor_Base * v, T * mClass);
     void visit (Visitor_Base * v);
     std::string toString (int const indent = 0);
   };
@@ -136,7 +143,7 @@ namespace sttr {
   template <typename T>
   void * construct_worker (T func, std::true_type isVariable) {
 	using TBase = typename std::remove_pointer<T>::type;
-	return (void*) new TBase;
+	return (void*) constructIfDefaultConstructible<TBase>();
 	}
 }
 namespace sttr {
@@ -162,9 +169,17 @@ namespace sttr {
 }
 namespace sttr {
   template <typename T, typename CT>
-  void * Reg <T, CT>::construct () {
-	return construct_worker(func, sttr::is_variable<T>());
+  void Reg <T, CT>::visitClass (Visitor_Base * v) {
+	// Used for the actual class types (RegNamespace::thisClass)
+	#ifdef STTR_CLASS_VISITORS
+		STTR_CLASS_VISITORS
+	#endif
+	v->visitClass(this);
 	}
+}
+namespace sttr {
+  template <typename T, typename CT>
+  void * Reg <T, CT>::construct () { return construct_worker(func, sttr::is_variable<T>()); }
 }
 namespace sttr {
   template <typename T, typename CT>
@@ -214,6 +229,7 @@ namespace sttr {
 	RegNamespace * R = new RegNamespace(_name);
 	R->parent = this;
 	R->thisClass = new Reg<T*, sttr::NullType>(NULL, _name);
+//	R->baseClassTuple = new Reg<VaradicWrap<>*, T>(NULL, "");
 	R->thisClassSig = sttr::getTypeSignature<T>();
 	classes.push_back(R);
 	
@@ -240,13 +256,17 @@ namespace sttr {
 	// Should only be used for a base of a tree
 	assert((!parent) && "sttr::RegNamespace::deriveClass being called on a RegNamespace that is not the base (it has a parent)");
 	
+	
 	void* baseSig = sttr::getTypeSignature<BASE>();
 	RegNamespace * R = findClassPointerBySig(baseSig);
 	if (R) {
-		return R->beginClass<DERIVED>(name);
+		RegNamespace & RR = R->beginClass<DERIVED>(name);
+//		RR.storeBaseClassTuple<DERIVED,BASE>();
+		return RR;
 		}
 		
 	RegNamespace & RR = beginClass<DERIVED>(name);
+//	RR.storeBaseClassTuple<DERIVED, BASE>();
 	RR.uninstantiatedParent = baseSig;
 	return RR;
 	}
@@ -260,18 +280,18 @@ namespace sttr {
 namespace sttr {
   template <typename T, typename V>
   T * RegNamespace::safeUpcast (V * v) {
-	std::cout << "safe upcast: " << sttr::getTypeName<V>() << " to " << sttr::getTypeName<T>() << ", actual class = " << findClassPointerBySig(v->sttr_getClassSig())->name << std::endl;
+	//std::cout << "safe upcast: " << sttr::getTypeName<V>() << " to " << sttr::getTypeName<T>() << ", actual class = " << findClassPointerBySig(v->sttr_getClassSig())->name << std::endl;
 	RegNamespace * R = findClassPointerBySig(sttr::getTypeSignature<T>());
 	if (!R) return NULL;
-	std::cout << "found R!! : " << sttr::getTypeName<V>() << " to " << sttr::getTypeName<T>() << std::endl;
+	//std::cout << "found R!! : " << sttr::getTypeName<V>() << " to " << sttr::getTypeName<T>() << std::endl;
 	if (R->isDerivedFromSig(v->sttr_getClassSig())) return (T*) v;
 	return NULL;
 	}
 }
 namespace sttr {
   template <typename T>
-  void RegNamespace::visit (Visitor_Base * v, T * mClass) {
-	// Calls visit for T. Requires sttr_getClassSig() to be defined for all classes in the chain
+  void RegNamespace::visitPolymorthic (Visitor_Base * v, T * mClass) {
+	// Calls visit for T. Searches the tree for the instance type. Requires sttr_getClassSig() to be defined for all classes in the chain
 	RegNamespace * R = findClassPointerBySig(mClass->sttr_getClassSig());
 	// Find the base class
 	//std::cout << "mClass->sttr_getClassSig() " << mClass->sttr_getClassSig() << " this " << thisClass->name << " sig: " << thisClassSig <<  " R " << R << std::endl;

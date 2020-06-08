@@ -12,8 +12,13 @@
 
 #define STTR_ADD_VISITOR(mVisitorType) 					if (v->getSignature() == mVisitorType::getSignatureStatic()) { 		mVisitorType * vv = (mVisitorType *) v; 				vv->visit(this); 							return;								}
 	
+#define STTR_ADD_CLASS_VISITOR(mVisitorType) 				if (v->getSignature() == mVisitorType::getSignatureStatic()) { 		mVisitorType * vv = (mVisitorType *) v; 				vv->visitClass(this); 						return;								}
+	
 namespace sttr {
 	class NullType {};
+	
+	template<typename ...ARGS>
+	struct VaradicWrap{};
 
 	template<typename T, typename CT>
 	class Reg;
@@ -29,6 +34,7 @@ namespace sttr {
 	
 	template <typename T>
 	T getTypePointingTo(T v);
+	
 	
 //	template<class CT, typename T>
 //	inline T getBaseType(T *v) {}
@@ -90,16 +96,52 @@ namespace sttr {
 #define LZZ_INLINE inline
 namespace sttr {
   template <typename T>
+  T * constructIfDefaultConstructible_worker (std::false_type isDefaultConstructible);
+}
+namespace sttr {
+  template <typename T>
+  T * constructIfDefaultConstructible_worker (std::true_type isDefaultConstructible);
+}
+namespace sttr {
+  template <typename T>
+  T * constructIfDefaultConstructible ();
+}
+namespace sttr {
+  template <typename T>
   char * getTypeSignature ();
+}
+namespace sttr {
+  template <typename T, typename R>
+  bool isType (R const & r);
+}
+namespace sttr {
+  template <typename T, typename R>
+  bool isType (R const * const r);
 }
 namespace sttr {
   class Visitor_Base {
   public:
     template <typename T, typename CT>
     void visit (sttr::Reg <T, CT> * RB);
+    template <typename T, typename CT>
+    void visitClass (sttr::Reg <T, CT> * CLASS);
     virtual void * getSignature ();
     static void * getSignatureStatic ();
   };
+}
+namespace sttr {
+  template <typename T>
+  T * constructIfDefaultConstructible_worker (std::false_type isDefaultConstructible) { return NULL; }
+}
+namespace sttr {
+  template <typename T>
+  T * constructIfDefaultConstructible_worker (std::true_type isDefaultConstructible) { return new T; }
+}
+namespace sttr {
+  template <typename T>
+  T * constructIfDefaultConstructible () {
+	return constructIfDefaultConstructible_worker<T>(std::is_default_constructible<T>());
+	}
 }
 namespace sttr {
   template <typename T>
@@ -109,9 +151,23 @@ namespace sttr {
 	}
 }
 namespace sttr {
+  template <typename T, typename R>
+  bool isType (R const & r) { return r.sttr_getClassSig() == sttr::getTypeSignature<T>(); }
+}
+namespace sttr {
+  template <typename T, typename R>
+  bool isType (R const * const r) { return r->sttr_getClassSig() == sttr::getTypeSignature<T>(); }
+}
+namespace sttr {
   template <typename T, typename CT>
   void Visitor_Base::visit (sttr::Reg <T, CT> * RB) {
 	// Your code here if deriving from this class 
+	}
+}
+namespace sttr {
+  template <typename T, typename CT>
+  void Visitor_Base::visitClass (sttr::Reg <T, CT> * CLASS) {
+	// This is called for RegNamespace::thisClass. Used to visit class types themselves
 	}
 }
 #undef LZZ_INLINE

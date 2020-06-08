@@ -13,8 +13,18 @@
 		return;														\
 		}
 		
+#define STTR_ADD_CLASS_VISITOR(mVisitorType) 						\
+	if (v->getSignature() == mVisitorType::getSignatureStatic()) { 	\
+		mVisitorType * vv = (mVisitorType *) v; 					\
+		vv->visitClass(this); 										\
+		return;														\
+		}
+		
 namespace sttr {
 	class NullType {};
+	
+	template<typename ...ARGS>
+	struct VaradicWrap{};
 
 	template<typename T, typename CT>
 	class Reg;
@@ -30,6 +40,7 @@ namespace sttr {
 	
 	template <typename T>
 	T getTypePointingTo(T v);
+	
 	
 //	template<class CT, typename T>
 //	inline T getBaseType(T *v) {}
@@ -95,8 +106,14 @@ namespace sttr {
 
 
 namespace sttr {
+// Constructs an object if a default constructor exists
+template<typename T> T * constructIfDefaultConstructible_worker(std::false_type isDefaultConstructible) { return NULL; }
+template<typename T> T * constructIfDefaultConstructible_worker(std::true_type isDefaultConstructible) { return new T; }
+template<typename T>
+T * constructIfDefaultConstructible() {
+	return constructIfDefaultConstructible_worker<T>(std::is_default_constructible<T>());
+	}
 	
-
 	
 // Converts a type to a unique address
 template<typename T>
@@ -104,13 +121,30 @@ char * getTypeSignature() {
 	static char R;
 	return &R;
 	}
+
+// Returns true if and only if R is of type T
+template <typename T, typename R>
+bool isType(const R & r) { return r.sttr_getClassSig() == sttr::getTypeSignature<T>(); }
 	
+template <typename T, typename R>
+bool isType(const R * const r) { return r->sttr_getClassSig() == sttr::getTypeSignature<T>(); }
+
 class Visitor_Base {
 public:
 	template<typename T, typename CT>
 	void visit(sttr::Reg<T, CT> * RB) {
 		// Your code here if deriving from this class 
 		}
+		
+	template<typename T, typename CT>
+	void visitClass(sttr::Reg<T, CT> * CLASS) {
+		// This is called for RegNamespace::thisClass. Used to visit class types themselves
+		}
+		
+//	template<typename T, typename CT>
+//	void visitBaseClassTuple(sttr::Reg<T, CT> * CLASS) {
+//		// This is called for RegNamespace::baseClassTuple. Used to visit class inheritance chains
+//		}
 		
 	virtual void * getSignature() {
 		// Must be present in derived classes

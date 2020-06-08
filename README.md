@@ -16,7 +16,7 @@ I wanted to expose class members to various utilities, such as Lua scripting, JS
 * Can register userData - every entry has a uint32_t, a std::string and a (void*) that you can use for whatever purpose
 * No RTTI
 * Human written documentation. Scroll down to see it
-* Only ~300 lines of code
+* Only ~400 lines of code
 * Only dependencies are standard C and C++ libraries
 * Public Domain
 
@@ -97,13 +97,22 @@ int main(int argc, char ** argv) {
 ## Classes & Functions
 Everything is in the sttr namespace
 
+### Macros
+See `sttr_compat_macros.hpp`. These can be used to add class type information to classes without RTTI.
+* `STTR_CLASS_SIG(X)`: Defines two functions - sttr_getClassSig() and sttr_getClassName()
+* `STTR_AUTO_UPCAST(BASE, DERIVED)`: Defines two functions - upcast() and upcastC(). These perform a dynamic cast without RTTI.
+* `STTR_CLASS_SIG_NON_POLY(X)`: `STTR_CLASS_SIG` without `virtual`. Removes compiler warnings for non-polymorphic classes
+
 ### Free Functions
 * `template <typename T> std::string getTypeName()` - 
 * `template <typename T> const char * getTypeName()` - 
 Converts a type to a string. If you are compiling with c++17 or later the const char* version will be used which is resolved at compile time
+* `template <typename T, R> bool isType(const R & r)` - Returns true if and only if R is of type T. Needs function R::sttr_getClassSig() defined.
+* `template <typename T, R> bool isType(const R * const r)` - Returns true if and only if R is of type T. Needs function R::sttr_getClassSig() defined.
 
 * `template <typename T> char * getTypeSignature()` - 
 Converts a type to a unique pointer. Used to identify classes without RTTI
+* `template <typename T> T* constructIfDefaultConstructible()` - Constructs an instance of T (with new) if T is default constructable, else returns NULL
 
 ### RegBase
 * `class RegBase` - Base class used to stored registered fields (variables, functions, classes)
@@ -134,11 +143,9 @@ Class derived from RegBase, used to store pointers to registered fields (eg, if 
 * `RegNamespace & setUserFlags (const uint32_t & userFlags)` - Sets field->userFlags for the last added field. Will trip an assert if no fields are present
 * `RegNamespace & setUserString (const std::string & userString)` - Sets field->userString for the last added field. Will trip an assert if no fields are present
 * `RegNamespace & setUserData (void * userData)` - Sets field->userData for the last added field. Does not take ownership of userData, userData will not be deleted on destruction
-* `RegNamespace & setUserFlags (const uint32_t & userFlags)` - If this namespace is a class, sets flags for that class. Else trips an assert.
-* `RegNamespace & setUserString (const std::string & userString)` - If this namespace is a class, sets the userString for that class. Else trips an assert.
-* `RegNamespace & setUserData (void * userData)` - If this namespace is a class, sets the userdata for that class. Else trips an assert.
-
-
+* `RegNamespace & setClassUserFlags (const uint32_t & userFlags)` - If this namespace is a class, sets flags for that class. Else trips an assert.
+* `RegNamespace & setClassUserString (const std::string & userString)` - If this namespace is a class, sets the userString for that class. Else trips an assert.
+* `RegNamespace & setClassUserData (void * userData)` - If this namespace is a class, sets the userdata for that class. Else trips an assert.
 * `template<typename T> RegNamespace & beginClass(const char * _name)` - Starts a class. A class is represented internally as a RegNamespace, so this returns the new one created. 
 * `template<typename BASE, typename DERIVED> RegNamespace & deriveClass(const char * _name)` - Starts a class that is derived from another. The BASE does not have to be registered when you call this, you may register it before or later. If the base is not registered then the derived class is added as a child to the root of the class tree and then placed as a child of the base class when that is registered. *WARNING*: Calling `endClass()` after using this may place you in a different position of the class tree than you expect! You should make a seperate `getNamespaceSomehow().beginClass()` call after `endClass()` if using this. 
 * `RegNamespace & endClass()` - Ends the class you're working on
@@ -149,7 +156,8 @@ Class derived from RegBase, used to store pointers to registered fields (eg, if 
 * `void* construct_retVoidPtr()` - Same as above, but returns `new T` casted to a void pointer.
 * `std::string toString()` - Recursively prints out the layout of the namespace tree
 * `void visit(sttr::Visitor_Base * v)` - Visits all registered members and classes with v
-* `void visitRecursive(sttr::Visitor_Base * v)` - Recursively visits all registered members and classes with v
+* `void visitRecursive(sttr::Visitor_Base * v)` - Recursively visits all registered members and classes with v. This goes *down* the tree from the current leaf
+* `void visitPolymorthic(sttr::Visitor_Base * v)` - Recursively visits all registered members with v. This goes *up* the tree from the current leaf until the base class is done being visited.
 
 ## Visitors
 To access the raw pointer to a registered field you must use a visitor. Copy and paste the following code (change MyVisitor to something else)
@@ -158,11 +166,16 @@ To access the raw pointer to a registered field you must use a visitor. Copy and
 
 class MyVisitor : public sttr::Visitor_Base {
 public:	
-	template<typename T>
-	void visit(sttr::Reg<T> * RB) {
+	template<typename T, CT>
+	void visit(sttr::Reg<T, CT> * RB) {
 		// Your code here!
 		// RB->func is the pointer you're after 
 		//std::cout << "Visiting! " << sttr::getTypeName<T>() << std::endl;
+		}
+
+	void visitClass(sttr::Reg<T, CT> *RB) {
+		// Called when a class (a RegNamespace) is called
+		// T here is a Class*, use std::remove_pointer<T> to get the class type
 		}
 	
 	// These functions must be present for sttr to figure out which
@@ -179,11 +192,15 @@ public:
 Finally you must define the `STTR_VISITORS` macro before `#include "sttr.h"`, otherwise sttr won't know your visitor exists!
 ```
 #define STTR_VISITORS \
-	STTR_ADD_VISITOR(MyVisitor) \
+	STTR_ADD_VISITOR(MyVisitor) \			// Use this to call visit() on members/methods of classes
 	STTR_ADD_VISITOR(MyOtherVisitor)
+	
+#define STTR_CLASS_VISITORS \
+	STTR_ADD_VISITOR(MyVisitor) 			// Use this to call visitClass() on classes themselves
 	
 #include "sttr.h"
 ```
+
 
 ## See Also:
 * [RTTR](https://github.com/rttrorg/rttr)  - All bells and whistles

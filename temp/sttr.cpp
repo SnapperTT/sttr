@@ -17,6 +17,9 @@ namespace sttr {
   void RegBase::visit (Visitor_Base * V) {}
 }
 namespace sttr {
+  void RegBase::visitClass (Visitor_Base * V) {}
+}
+namespace sttr {
   std::string RegBase::getTypeName () { return ""; }
 }
 namespace sttr {
@@ -37,6 +40,7 @@ namespace sttr {
 	for (RegBase * RB : members) delete RB;
 	for (RegNamespace * RN : classes) delete RN;
 	if (thisClass) delete thisClass;
+//	if (baseClassTuple) delete baseClassTuple;
 	}
 }
 namespace sttr {
@@ -114,7 +118,6 @@ namespace sttr {
   RegNamespace * RegNamespace::findClassPointer (char const * class_name) {
 	for (RegNamespace * R : classes) {
 		if (R->thisClass) {
-		std::cout << "comp: " << class_name << " " << R->thisClass->name << std::endl;
 		if (!strcmp(R->thisClass->name, class_name))
 			return R;
 		}
@@ -164,7 +167,7 @@ namespace sttr {
 }
 namespace sttr {
   void RegNamespace::visitRecursive (Visitor_Base * v) {
-	// Recusively visits all classes and members
+	// Recusively visits all classes and members. Goes down the tree
 	for (RegNamespace * R : classes) {
 		R->visitRecursive(v);
 		}
@@ -172,8 +175,28 @@ namespace sttr {
 	}
 }
 namespace sttr {
+  void RegNamespace::visitPolymorthic (Visitor_Base * v) {
+	// Recusively visits all classes and members, goes up the class tree
+	// Classes are visited in order Base->Derived1->Derived2->...->This
+	RegNamespace * R = this;
+	if (!R) return;
+	std::vector<RegNamespace*> chain;
+	while (R->thisClass) {
+		chain.push_back(R);
+		R = R->parent;
+		if (!R) break;
+		}
+		
+	for (unsigned int i = chain.size()-1; i < chain.size(); --i) {
+		chain[i]->visit(v);
+		}
+	}
+}
+namespace sttr {
   void RegNamespace::visit (Visitor_Base * v) {
 	// Visits this class. Does not account for polymorthisim
+	if (thisClass) thisClass->visitClass(v);
+//	if (baseClassTuple) baseClassTuple->visitBaseClassTuple(v);
 	for (RegBase * RB : members)
 		RB->visit(v);
 	}
