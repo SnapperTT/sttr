@@ -37,6 +37,14 @@ namespace sttr {
 #define STTR_VARADIC_TEMPLATE_ARGS1 ...ARGS
 #define STTR_VARADIC_TEMPLATE_ARGS2 ARGS...
 
+// SFINAE test for function existance
+#define STTR_HAS_FUNC(func)						template <typename T>							class has_##func {							    typedef char one;							    struct two { char x[2]; };						    template <typename C> static one test( decltype(&C::func) ) ;	    template <typename C> static two test(...);    			public:									    enum { value = sizeof(test<T>(0)) == sizeof(char) };			};
+
+namespace sttr {
+	STTR_HAS_FUNC(sttr_getClassSig)		// creates class has_sttr_getClassSig<>
+	STTR_HAS_FUNC(sttr_getClassName)
+	}
+
 #define LZZ_INLINE inline
 namespace sttr {
   class RegBase {

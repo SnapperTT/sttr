@@ -6,11 +6,11 @@
 	// Automatic safe upcast function without RTTI
 	#define STTR_AUTO_UPCAST(BASE,DERIVED)																				\
 							static DERIVED * upcast(BASE * B) {															\
-								if (sttr::isType<DERIVED>(B)) return (DERIVED*) B;										\
+								if (sttr::isType<DERIVED>(*B)) return (DERIVED*) B;										\
 								return NULL;																			\
 								}																						\
 							static const DERIVED * const upcastC(const BASE * const B) {								\
-								if (sttr::isType<DERIVED>(B)) return (const DERIVED* const) B;							\
+								if (sttr::isType<DERIVED>(*B)) return (const DERIVED* const) B;							\
 								return NULL;																			\
 								}
 	// STTR_CLASS_SIG without virtual			
