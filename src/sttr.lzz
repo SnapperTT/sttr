@@ -91,10 +91,12 @@ public:
 	virtual void visit(Visitor_Base * V) {}
 	virtual void visitClass(Visitor_Base * V) {}
 	//virtual void visitBaseClassTuple(Visitor_Base * V) {}
+	
 	virtual std::string getTypeName() { return ""; }
 	virtual std::string getTypePointingTo() { return ""; }
-	virtual unsigned char const * getAddr() const { return 0; }
+	//virtual unsigned char const * getAddr() const { return 0; } // useless, just use getOffset
 	virtual const long long int getOffset() const { return 0; }
+
 	};
 	
 template<typename T>
@@ -139,13 +141,15 @@ public:
 	std::string getTypePointingTo() { return sttr::getTypeName<decltype(sttr::getTypePointingTo(func))>(); }
 	
 	/// Get the raw offset of a pointer
-	unsigned char const * getAddr() const {
-		unsigned char const * first  = reinterpret_cast<unsigned char const *>(&func);
-		return reinterpret_cast<unsigned char *>(*first);
-		}
+	//unsigned char const * getAddr() const {
+	//	unsigned char const * first  = reinterpret_cast<unsigned char const *>(&func);
+	//	return reinterpret_cast<unsigned char *>(*first);
+	//	}
 		
 	const long long int getOffset() const {
-		return reinterpret_cast<size_t>(getAddr());
+		unsigned char const * first = reinterpret_cast<unsigned char const *>(&func);
+		unsigned char const * first2 = reinterpret_cast<unsigned char *>(*first);
+		return reinterpret_cast<size_t>(first2);
 		}
 	};
 

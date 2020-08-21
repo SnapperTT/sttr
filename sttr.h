@@ -38,11 +38,11 @@ namespace sttr {
 #define STTR_VARADIC_TEMPLATE_ARGS2 ARGS...
 
 // SFINAE test for function existance
-#define STTR_HAS_FUNC(func)						template <typename T>							class has_##func {							    typedef char one;							    struct two { char x[2]; };						    template <typename C> static one test( decltype(&C::func) ) ;	    template <typename C> static two test(...);    			public:									    enum { value = sizeof(test<T>(0)) == sizeof(char) };			};
+#define STTR_HAS_FUNC(func)						template <typename T>							class has_##func {							    typedef char one;							    struct two { char x[2]; };						    template <typename C> static one test( decltype(&C::func) ) ;	    template <typename C> static two test(...);    			public:									    enum { value = (sizeof(test<T>(0)) == sizeof(char)) };			};
 
 namespace sttr {
-	STTR_HAS_FUNC(sttr_getClassSig)		// creates class has_sttr_getClassSig<>
-	STTR_HAS_FUNC(sttr_getClassName)
+	STTR_HAS_FUNC(sttr_getClassSig)	// creates class has_sttr_getClassSig<Class>
+	STTR_HAS_FUNC(sttr_getClassName)	// creates class has_sttr_getClassName<Class>
 	}
 
 #define LZZ_INLINE inline
@@ -67,7 +67,6 @@ namespace sttr {
     virtual void visitClass (Visitor_Base * V);
     virtual std::string getTypeName ();
     virtual std::string getTypePointingTo ();
-    virtual unsigned char const * getAddr () const;
     virtual long long int const getOffset () const;
   };
 }
@@ -91,7 +90,6 @@ namespace sttr {
     void * construct ();
     std::string getTypeName ();
     std::string getTypePointingTo ();
-    unsigned char const * getAddr () const;
     long long int const getOffset () const;
   };
 }
@@ -199,15 +197,10 @@ namespace sttr {
 }
 namespace sttr {
   template <typename T, typename CT>
-  unsigned char const * Reg <T, CT>::getAddr () const {
-	unsigned char const * first  = reinterpret_cast<unsigned char const *>(&func);
-	return reinterpret_cast<unsigned char *>(*first);
-	}
-}
-namespace sttr {
-  template <typename T, typename CT>
   long long int const Reg <T, CT>::getOffset () const {
-	return reinterpret_cast<size_t>(getAddr());
+	unsigned char const * first = reinterpret_cast<unsigned char const *>(&func);
+	unsigned char const * first2 = reinterpret_cast<unsigned char *>(*first);
+	return reinterpret_cast<size_t>(first2);
 	}
 }
 namespace sttr {

@@ -26,9 +26,6 @@ namespace sttr {
   std::string RegBase::getTypePointingTo () { return ""; }
 }
 namespace sttr {
-  unsigned char const * RegBase::getAddr () const { return 0; }
-}
-namespace sttr {
   long long int const RegBase::getOffset () const { return 0; }
 }
 namespace sttr {

@@ -26,15 +26,26 @@ namespace sttr {
 	// Utility templates
 	
 	// Yanks out the type of a member pointer 
-	template <class CT, typename T>
-	T getTypePointingTo(T CT::*v);
+	template <class CT, typename T, const size_t SZ> T* getTypePointingTo(T (CT::*v)[SZ]);
+	template <class CT, typename T> T getTypePointingTo(T CT::*v);
 	
-	template <typename T>
-	T getTypePointingTo(T * v);
+	template <typename T> T getTypePointingTo(T * v);
+	template <typename T> T getTypePointingTo(T v);
 	
-	template <typename T>
-	T getTypePointingTo(T v);
-	
+	// remove_member_pointer
+	// See: https://stackoverflow.com/questions/22213523/c11-14-how-to-remove-a-pointer-to-member-from-a-type
+	template<typename T, typename>
+	struct remove_member_pointer_helper { typedef T type; };
+
+	template<typename T, typename U, typename C>
+	struct remove_member_pointer_helper<T, U C::*> { typedef U type; };
+
+	template<typename T, typename U, typename C, const size_t SZ>
+	struct remove_member_pointer_helper<T, U (C::*)[SZ]> { typedef U type[SZ]; };
+
+	template<typename T>
+	struct remove_member_pointer
+	: public remove_member_pointer_helper<T, typename std::remove_cv<T>::type> {};
 	
 //	template<class CT, typename T>
 //	inline T getBaseType(T *v) {}
