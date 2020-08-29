@@ -26,7 +26,7 @@ namespace sttr {
   std::string RegBase::getTypePointingTo () { return ""; }
 }
 namespace sttr {
-  long long int const RegBase::getOffset () const { return 0; }
+  unsigned long long int const RegBase::getOffset () const { return 0; }
 }
 namespace sttr {
   RegNamespace::RegNamespace (char const * _name)
@@ -92,6 +92,27 @@ namespace sttr {
 	}
 }
 namespace sttr {
+  uint32_t RegNamespace::getClassUserFlags () const {
+	// Sets the userFlags for the last inserted member
+	assert (thisClass && "Trying to sttr::RegNamespace::getClassUserFlags with a namespace that is not a class");
+	return thisClass->userFlags;
+	}
+}
+namespace sttr {
+  std::string RegNamespace::setClassUserString () const {
+	// Sets the userString for the last inserted member
+	assert (thisClass && "Trying to sttr::RegNamespace::getClassUserString with a namespace that is not a class");
+	return thisClass->userString;
+	}
+}
+namespace sttr {
+  void * RegNamespace::getClassUserData () const {
+	// Sets the userString for the last inserted member
+	assert (thisClass && "Trying to sttr::RegNamespace::getClassUserData with a namespace that is not a class");
+	return thisClass->userData;
+	}
+}
+namespace sttr {
   RegNamespace & RegNamespace::endClass () {
 	if (parent) return *parent;
 	return *this;
@@ -115,6 +136,7 @@ namespace sttr {
   RegNamespace * RegNamespace::findClassPointer (char const * class_name) {
 	for (RegNamespace * R : classes) {
 		if (R->thisClass) {
+		//std::cout << "comp a: " << name << "->" << R->thisClass->name << " " << class_name << std::endl;
 		if (!strcmp(R->thisClass->name, class_name))
 			return R;
 		}
@@ -132,6 +154,7 @@ namespace sttr {
 	if (target == thisClassSig) return this;
 	for (RegNamespace * R : classes) {
 		if (R->thisClass) {
+		//std::cout << "comp b: " << name << "->" << R->name << " " << R->thisClassSig << " " << target<< std::endl;
 		if (R->thisClassSig == target)
 			return R;
 		}
@@ -199,7 +222,7 @@ namespace sttr {
 	}
 }
 namespace sttr {
-  std::string RegNamespace::toString (int const indent) {
+  std::string RegNamespace::toString (int const indent) const {
 	std::string r = "";
 	for (RegBase * RB : members) {
 		r += std::string(indent,'\t') + "\tField: "+ RB->name + "\tTypedef: " + RB->getTypeName() + ", Pointing To: " + RB->getTypePointingTo()+ ", isStatic: " + STTR_BTOS(RB->isStatic) + " , isConst: " + STTR_BTOS(RB->isConst) + ", isFunction: " + STTR_BTOS(RB->isFunction) + ", isVariable: " + STTR_BTOS(RB->isVariable) + "\n";
@@ -207,6 +230,16 @@ namespace sttr {
 	for (RegNamespace * RS : classes) {
 		r += std::string(indent,'\t') + "class " + RS->name + ":\n";
 		r += RS->toString(indent+1);
+		}
+	return r;
+	}
+}
+namespace sttr {
+  std::string RegNamespace::toClassTreeString (int const indent) const {
+	std::string r = "";
+	for (RegNamespace * RS : classes) {
+		r += std::string(indent,'\t') + RS->name + "\n";
+		r += RS->toClassTreeString(indent+1);
 		}
 	return r;
 	}

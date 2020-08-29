@@ -67,7 +67,7 @@ namespace sttr {
     virtual void visitClass (Visitor_Base * V);
     virtual std::string getTypeName ();
     virtual std::string getTypePointingTo ();
-    virtual long long int const getOffset () const;
+    virtual unsigned long long int const getOffset () const;
   };
 }
 namespace sttr {
@@ -90,7 +90,22 @@ namespace sttr {
     void * construct ();
     std::string getTypeName ();
     std::string getTypePointingTo ();
-    long long int const getOffset () const;
+    unsigned long long int const getOffset () const;
+  };
+}
+namespace sttr {
+  template <typename T>
+  class Reg <T, sttr::NullType> : public RegBase {
+  public:
+    T func;
+    Reg (T v, char const * _name);
+    virtual ~ Reg ();
+    void visit (Visitor_Base * v);
+    void visitClass (Visitor_Base * v);
+    void * construct ();
+    std::string getTypeName ();
+    std::string getTypePointingTo ();
+    unsigned long long int const getOffset () const;
   };
 }
 namespace sttr {
@@ -115,6 +130,9 @@ namespace sttr {
     RegNamespace & setClassUserFlags (uint32_t const & userFlags);
     RegNamespace & setClassUserString (std::string const & userString);
     RegNamespace & setClassUserData (void * userData);
+    uint32_t getClassUserFlags () const;
+    std::string setClassUserString () const;
+    void * getClassUserData () const;
     template <typename T>
     RegNamespace & beginClass (char const * _name);
     template <typename BASE, typename DERIVED>
@@ -135,7 +153,8 @@ namespace sttr {
     template <typename T>
     void visitPolymorthic (Visitor_Base * v, T * mClass);
     void visit (Visitor_Base * v);
-    std::string toString (int const indent = 0);
+    std::string toString (int const indent = 0) const;
+    std::string toClassTreeString (int const indent = 0) const;
   };
 }
 namespace sttr {
@@ -175,13 +194,7 @@ namespace sttr {
 }
 namespace sttr {
   template <typename T, typename CT>
-  void Reg <T, CT>::visitClass (Visitor_Base * v) {
-	// Used for the actual class types (RegNamespace::thisClass)
-	#ifdef STTR_CLASS_VISITORS
-		STTR_CLASS_VISITORS
-	#endif
-	v->visitClass(this);
-	}
+  void Reg <T, CT>::visitClass (Visitor_Base * v) {}
 }
 namespace sttr {
   template <typename T, typename CT>
@@ -197,8 +210,51 @@ namespace sttr {
 }
 namespace sttr {
   template <typename T, typename CT>
-  long long int const Reg <T, CT>::getOffset () const {
-	unsigned char const * first = reinterpret_cast<unsigned char const *>(&func);
+  unsigned long long int const Reg <T, CT>::getOffset () const {
+	const unsigned long long int * first = reinterpret_cast<const unsigned long long int *>(&func);
+	unsigned char const * first2 = reinterpret_cast<unsigned char *>(*first);
+	return reinterpret_cast<size_t>(first2);
+	}
+}
+namespace sttr {
+  template <typename T>
+  Reg <T, sttr::NullType>::Reg (T v, char const * _name)
+    : RegBase (_name), func (v) {}
+}
+namespace sttr {
+  template <typename T>
+  Reg <T, sttr::NullType>::~ Reg () {}
+}
+namespace sttr {
+  template <typename T>
+  void Reg <T, sttr::NullType>::visit (Visitor_Base * v) {}
+}
+namespace sttr {
+  template <typename T>
+  void Reg <T, sttr::NullType>::visitClass (Visitor_Base * v) {
+	// Used for the actual class types (RegNamespace::thisClass)
+	#ifdef STTR_CLASS_VISITORS
+		STTR_CLASS_VISITORS
+	#endif
+	v->visitClass(this);
+	}
+}
+namespace sttr {
+  template <typename T>
+  void * Reg <T, sttr::NullType>::construct () { return construct_worker(func, sttr::is_variable<T>()); }
+}
+namespace sttr {
+  template <typename T>
+  std::string Reg <T, sttr::NullType>::getTypeName () { return sttr::getTypeName<T>(); }
+}
+namespace sttr {
+  template <typename T>
+  std::string Reg <T, sttr::NullType>::getTypePointingTo () { return sttr::getTypeName<decltype(sttr::getTypePointingTo(func))>(); }
+}
+namespace sttr {
+  template <typename T>
+  unsigned long long int const Reg <T, sttr::NullType>::getOffset () const {
+	const unsigned long long int * first = reinterpret_cast<const unsigned long long int *>(&func);
 	unsigned char const * first2 = reinterpret_cast<unsigned char *>(*first);
 	return reinterpret_cast<size_t>(first2);
 	}

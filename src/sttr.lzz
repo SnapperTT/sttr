@@ -95,7 +95,7 @@ public:
 	virtual std::string getTypeName() { return ""; }
 	virtual std::string getTypePointingTo() { return ""; }
 	//virtual unsigned char const * getAddr() const { return 0; } // useless, just use getOffset
-	virtual const long long int getOffset() const { return 0; }
+	virtual const unsigned long long int getOffset() const { return 0; }
 
 	};
 	
@@ -126,6 +126,31 @@ public:
 		v->visit(this);
 		}
 		
+	 void visitClass (Visitor_Base * v) {}
+		
+	void* construct() { return construct_worker(func, sttr::is_variable<T>()); }
+	
+	/// Returns the type of T as a human readable string
+	std::string getTypeName() { return sttr::getTypeName<T>(); }
+	std::string getTypePointingTo() { return sttr::getTypeName<decltype(sttr::getTypePointingTo(func))>(); }
+	
+	const unsigned long long int getOffset() const {
+		const unsigned long long int * first = reinterpret_cast<const unsigned long long int *>(&func);
+		unsigned char const * first2 = reinterpret_cast<unsigned char *>(*first);
+		return reinterpret_cast<size_t>(first2);
+		}
+	};
+
+template<typename T>
+class Reg<T, sttr::NullType> : public RegBase {
+public:
+	T func;
+	
+	Reg(T v, const char * _name) : RegBase(_name), func(v) {}
+	virtual ~Reg(){}
+	
+	void visit(Visitor_Base * v) {}
+	
 	 void visitClass (Visitor_Base * v) {
 		// Used for the actual class types (RegNamespace::thisClass)
 		#ifdef STTR_CLASS_VISITORS
@@ -139,21 +164,15 @@ public:
 	/// Returns the type of T as a human readable string
 	std::string getTypeName() { return sttr::getTypeName<T>(); }
 	std::string getTypePointingTo() { return sttr::getTypeName<decltype(sttr::getTypePointingTo(func))>(); }
-	
-	/// Get the raw offset of a pointer
-	//unsigned char const * getAddr() const {
-	//	unsigned char const * first  = reinterpret_cast<unsigned char const *>(&func);
-	//	return reinterpret_cast<unsigned char *>(*first);
-	//	}
 		
-	const long long int getOffset() const {
-		unsigned char const * first = reinterpret_cast<unsigned char const *>(&func);
+	const unsigned long long int getOffset() const {
+		const unsigned long long int * first = reinterpret_cast<const unsigned long long int *>(&func);
 		unsigned char const * first2 = reinterpret_cast<unsigned char *>(*first);
 		return reinterpret_cast<size_t>(first2);
 		}
 	};
 
-	
+
 class RegNamespace {
 public:
 	RegNamespace * parent;
@@ -231,6 +250,21 @@ public:
 		assert (thisClass && "Trying to sttr::RegNamespace::setClassUserData with a namespace that is not a class");
 		thisClass->userData = userData;
 		return *this;
+		}
+	uint32_t getClassUserFlags () const {
+		// Sets the userFlags for the last inserted member
+		assert (thisClass && "Trying to sttr::RegNamespace::getClassUserFlags with a namespace that is not a class");
+		return thisClass->userFlags;
+		}
+	std::string setClassUserString () const {
+		// Sets the userString for the last inserted member
+		assert (thisClass && "Trying to sttr::RegNamespace::getClassUserString with a namespace that is not a class");
+		return thisClass->userString;
+		}
+	void* getClassUserData () const {
+		// Sets the userString for the last inserted member
+		assert (thisClass && "Trying to sttr::RegNamespace::getClassUserData with a namespace that is not a class");
+		return thisClass->userData;
 		}
 		
 	template<typename T>
@@ -331,6 +365,7 @@ public:
 	RegNamespace * findClassPointer(const char * class_name) {
 		for (RegNamespace * R : classes) {
 			if (R->thisClass) {
+				//std::cout << "comp a: " << name << "->" << R->thisClass->name << " " << class_name << std::endl;
 				if (!strcmp(R->thisClass->name, class_name))
 					return R;
 				}
@@ -347,6 +382,7 @@ public:
 		if (target == thisClassSig) return this;
 		for (RegNamespace * R : classes) {
 			if (R->thisClass) {
+				//std::cout << "comp b: " << name << "->" << R->name << " " << R->thisClassSig << " " << target<< std::endl;
 				if (R->thisClassSig == target)
 					return R;
 				}
@@ -422,7 +458,7 @@ public:
 			RB->visit(v);
 		}
 	
-	std::string toString(const int indent=0) {
+	std::string toString(const int indent=0) const {
 		std::string r = "";
 		for (RegBase * RB : members) {
 			r += std::string(indent,'\t') + "\tField: "+ RB->name + "\tTypedef: " + RB->getTypeName() + ", Pointing To: " + RB->getTypePointingTo()+ ", isStatic: " + STTR_BTOS(RB->isStatic) + " , isConst: " + STTR_BTOS(RB->isConst) + ", isFunction: " + STTR_BTOS(RB->isFunction) + ", isVariable: " + STTR_BTOS(RB->isVariable) + "\n";
@@ -430,6 +466,16 @@ public:
 		for (RegNamespace * RS : classes) {
 			r += std::string(indent,'\t') + "class " + RS->name + ":\n";
 			r += RS->toString(indent+1);
+			}
+		return r;
+		}
+	
+	
+	std::string toClassTreeString(const int indent=0) const {
+		std::string r = "";
+		for (RegNamespace * RS : classes) {
+			r += std::string(indent,'\t') + RS->name + "\n";
+			r += RS->toClassTreeString(indent+1);
 			}
 		return r;
 		}
