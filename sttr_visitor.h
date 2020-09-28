@@ -57,6 +57,12 @@ namespace sttr {
 	struct disjunction<B1, Bn...> 
 	: std::conditional_t<bool(B1::value), B1, disjunction<Bn...>> { };
 	
+	template<class...> struct conjunction : std::true_type { };
+	template<class B1> struct conjunction<B1> : B1 { };
+	template<class B1, class... Bn>
+	struct conjunction<B1, Bn...> 
+	: std::conditional_t<bool(B1::value), conjunction<Bn...>, B1> {};
+    
 	template <typename T>
 	using negate = std::integral_constant<bool, !T::value>;
 
@@ -151,7 +157,7 @@ namespace sttr {
 namespace sttr {
   template <typename T>
   T * constructIfDefaultConstructible () {
-	return constructIfDefaultConstructible_worker<T>(std::is_default_constructible<T>());
+	return constructIfDefaultConstructible_worker<T>(sttr::conjunction<std::is_default_constructible<T>, sttr::negate<std::is_const<T>>>());
 	}
 }
 namespace sttr {
