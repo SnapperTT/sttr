@@ -108,7 +108,7 @@ void* construct_worker(T func, std::true_type isVariable) {
 	}
 
 
-template<typename T, typename CT>
+template<typename T, typename CT, unsigned int FLAGS=0>
 class Reg : public RegBase {
 public:
 	T func;
@@ -141,8 +141,8 @@ public:
 		}
 	};
 
-template<typename T>
-class Reg<T, sttr::NullType> : public RegBase {
+template<typename T, unsigned int FLAGS>
+class Reg<T, sttr::NullType, FLAGS> : public RegBase {
 public:
 	T func;
 	
@@ -193,10 +193,10 @@ public:
 //		if (baseClassTuple) delete baseClassTuple;
 		}
 		
-	template <typename CT = sttr::NullType, typename T = sttr::NullType>
+	template <typename CT = sttr::NullType, typename T = sttr::NullType, unsigned int FLAGS=0>
 	RegNamespace & regField(T v, const char * _name) {
 		// for registration of anything
-		RegBase * R = new Reg<T, CT>(v,_name);
+		RegBase * R = new Reg<T, CT, FLAGS>(v,_name);
 		R->isFunction = sttr::is_function<T>::value;
 		R->isVariable = sttr::is_variable<T>::value;
 		R->isConst = sttr::is_const<T>::value;
@@ -267,11 +267,11 @@ public:
 		return thisClass->userData;
 		}
 		
-	template<typename T>
+	template<typename T, unsigned int FLAGS=0>
 	RegNamespace & beginClass(const char * _name) {
 		RegNamespace * R = new RegNamespace(_name);
 		R->parent = this;
-		R->thisClass = new Reg<T*, sttr::NullType>(NULL, _name);
+		R->thisClass = new Reg<T*, sttr::NullType, FLAGS>(NULL, _name);
 //		R->baseClassTuple = new Reg<VaradicWrap<>*, T>(NULL, "");
 		R->thisClassSig = sttr::getTypeSignature<T>();
 		classes.push_back(R);

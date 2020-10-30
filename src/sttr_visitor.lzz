@@ -26,7 +26,7 @@ namespace sttr {
 	template<typename ...ARGS>
 	struct VaradicWrap{};
 
-	template<typename T, typename CT>
+	template<typename T, typename CT, unsigned int FLAGS>
 	class Reg;
 	
 	// Utility templates
@@ -149,20 +149,15 @@ bool isType(const R * const r) { return r->sttr_getClassSig() == sttr::getTypeSi
 
 class Visitor_Base {
 public:
-	template<typename T, typename CT>
-	void visit(sttr::Reg<T, CT> * RB) {
+	template<typename T, typename CT, unsigned int FLAGS=0>
+	void visit(sttr::Reg<T, CT, FLAGS> * RB) {
 		// Your code here if deriving from this class 
 		}
 		
-	template<typename T, typename CT>
-	void visitClass(sttr::Reg<T, CT> * CLASS) {
+	template<typename T, typename CT, unsigned int FLAGS=0>
+	void visitClass(sttr::Reg<T, CT, FLAGS> * CLASS) {
 		// This is called for RegNamespace::thisClass. Used to visit class types themselves
 		}
-		
-//	template<typename T, typename CT>
-//	void visitBaseClassTuple(sttr::Reg<T, CT> * CLASS) {
-//		// This is called for RegNamespace::baseClassTuple. Used to visit class inheritance chains
-//		}
 		
 	virtual void * getSignature() {
 		// Must be present in derived classes

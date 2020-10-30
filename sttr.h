@@ -79,7 +79,7 @@ namespace sttr {
   void * construct_worker (T func, std::true_type isVariable);
 }
 namespace sttr {
-  template <typename T, typename CT>
+  template <typename T, typename CT, unsigned int FLAGS = 0>
   class Reg : public RegBase {
   public:
     T func;
@@ -94,8 +94,8 @@ namespace sttr {
   };
 }
 namespace sttr {
-  template <typename T>
-  class Reg <T, sttr::NullType> : public RegBase {
+  template <typename T, unsigned int FLAGS>
+  class Reg <T, sttr::NullType, FLAGS> : public RegBase {
   public:
     T func;
     Reg (T v, char const * _name);
@@ -120,7 +120,7 @@ namespace sttr {
     void * uninstantiatedParent;
     RegNamespace (char const * _name);
     ~ RegNamespace ();
-    template <typename CT = sttr::NullType, typename T = sttr::NullType>
+    template <typename CT = sttr::NullType, typename T = sttr::NullType, unsigned int FLAGS = 0>
     RegNamespace & regField (T v, char const * _name);
     template <typename CT, typename T>
     RegNamespace & regField (T CT::* v, char const * _name);
@@ -133,7 +133,7 @@ namespace sttr {
     uint32_t getClassUserFlags () const;
     std::string setClassUserString () const;
     void * getClassUserData () const;
-    template <typename T>
+    template <typename T, unsigned int FLAGS = 0>
     RegNamespace & beginClass (char const * _name);
     template <typename BASE, typename DERIVED>
     RegNamespace & deriveClass (char const * name);
@@ -172,17 +172,17 @@ namespace sttr {
 	}
 }
 namespace sttr {
-  template <typename T, typename CT>
-  Reg <T, CT>::Reg (T v, char const * _name)
+  template <typename T, typename CT, unsigned int FLAGS>
+  Reg <T, CT, FLAGS>::Reg (T v, char const * _name)
     : RegBase (_name), func (v) {}
 }
 namespace sttr {
-  template <typename T, typename CT>
-  Reg <T, CT>::~ Reg () {}
+  template <typename T, typename CT, unsigned int FLAGS>
+  Reg <T, CT, FLAGS>::~ Reg () {}
 }
 namespace sttr {
-  template <typename T, typename CT>
-  void Reg <T, CT>::visit (Visitor_Base * v) {
+  template <typename T, typename CT, unsigned int FLAGS>
+  void Reg <T, CT, FLAGS>::visit (Visitor_Base * v) {
 	// Upcast and get the right visitor
 	#ifdef STTR_VISITORS
 		STTR_VISITORS
@@ -193,45 +193,45 @@ namespace sttr {
 	}
 }
 namespace sttr {
-  template <typename T, typename CT>
-  void Reg <T, CT>::visitClass (Visitor_Base * v) {}
+  template <typename T, typename CT, unsigned int FLAGS>
+  void Reg <T, CT, FLAGS>::visitClass (Visitor_Base * v) {}
 }
 namespace sttr {
-  template <typename T, typename CT>
-  void * Reg <T, CT>::construct () { return construct_worker(func, sttr::is_variable<T>()); }
+  template <typename T, typename CT, unsigned int FLAGS>
+  void * Reg <T, CT, FLAGS>::construct () { return construct_worker(func, sttr::is_variable<T>()); }
 }
 namespace sttr {
-  template <typename T, typename CT>
-  std::string Reg <T, CT>::getTypeName () { return sttr::getTypeName<T>(); }
+  template <typename T, typename CT, unsigned int FLAGS>
+  std::string Reg <T, CT, FLAGS>::getTypeName () { return sttr::getTypeName<T>(); }
 }
 namespace sttr {
-  template <typename T, typename CT>
-  std::string Reg <T, CT>::getTypePointingTo () { return sttr::getTypeName<decltype(sttr::getTypePointingTo(func))>(); }
+  template <typename T, typename CT, unsigned int FLAGS>
+  std::string Reg <T, CT, FLAGS>::getTypePointingTo () { return sttr::getTypeName<decltype(sttr::getTypePointingTo(func))>(); }
 }
 namespace sttr {
-  template <typename T, typename CT>
-  unsigned long long int const Reg <T, CT>::getOffset () const {
+  template <typename T, typename CT, unsigned int FLAGS>
+  unsigned long long int const Reg <T, CT, FLAGS>::getOffset () const {
 	const unsigned long long int * first = reinterpret_cast<const unsigned long long int *>(&func);
 	unsigned char const * first2 = reinterpret_cast<unsigned char *>(*first);
 	return reinterpret_cast<size_t>(first2);
 	}
 }
 namespace sttr {
-  template <typename T>
-  Reg <T, sttr::NullType>::Reg (T v, char const * _name)
+  template <typename T, unsigned int FLAGS>
+  Reg <T, sttr::NullType, FLAGS>::Reg (T v, char const * _name)
     : RegBase (_name), func (v) {}
 }
 namespace sttr {
-  template <typename T>
-  Reg <T, sttr::NullType>::~ Reg () {}
+  template <typename T, unsigned int FLAGS>
+  Reg <T, sttr::NullType, FLAGS>::~ Reg () {}
 }
 namespace sttr {
-  template <typename T>
-  void Reg <T, sttr::NullType>::visit (Visitor_Base * v) {}
+  template <typename T, unsigned int FLAGS>
+  void Reg <T, sttr::NullType, FLAGS>::visit (Visitor_Base * v) {}
 }
 namespace sttr {
-  template <typename T>
-  void Reg <T, sttr::NullType>::visitClass (Visitor_Base * v) {
+  template <typename T, unsigned int FLAGS>
+  void Reg <T, sttr::NullType, FLAGS>::visitClass (Visitor_Base * v) {
 	// Used for the actual class types (RegNamespace::thisClass)
 	#ifdef STTR_CLASS_VISITORS
 		STTR_CLASS_VISITORS
@@ -240,30 +240,30 @@ namespace sttr {
 	}
 }
 namespace sttr {
-  template <typename T>
-  void * Reg <T, sttr::NullType>::construct () { return construct_worker(func, sttr::is_variable<T>()); }
+  template <typename T, unsigned int FLAGS>
+  void * Reg <T, sttr::NullType, FLAGS>::construct () { return construct_worker(func, sttr::is_variable<T>()); }
 }
 namespace sttr {
-  template <typename T>
-  std::string Reg <T, sttr::NullType>::getTypeName () { return sttr::getTypeName<T>(); }
+  template <typename T, unsigned int FLAGS>
+  std::string Reg <T, sttr::NullType, FLAGS>::getTypeName () { return sttr::getTypeName<T>(); }
 }
 namespace sttr {
-  template <typename T>
-  std::string Reg <T, sttr::NullType>::getTypePointingTo () { return sttr::getTypeName<decltype(sttr::getTypePointingTo(func))>(); }
+  template <typename T, unsigned int FLAGS>
+  std::string Reg <T, sttr::NullType, FLAGS>::getTypePointingTo () { return sttr::getTypeName<decltype(sttr::getTypePointingTo(func))>(); }
 }
 namespace sttr {
-  template <typename T>
-  unsigned long long int const Reg <T, sttr::NullType>::getOffset () const {
+  template <typename T, unsigned int FLAGS>
+  unsigned long long int const Reg <T, sttr::NullType, FLAGS>::getOffset () const {
 	const unsigned long long int * first = reinterpret_cast<const unsigned long long int *>(&func);
 	unsigned char const * first2 = reinterpret_cast<unsigned char *>(*first);
 	return reinterpret_cast<size_t>(first2);
 	}
 }
 namespace sttr {
-  template <typename CT, typename T>
+  template <typename CT, typename T, unsigned int FLAGS>
   RegNamespace & RegNamespace::regField (T v, char const * _name) {
 	// for registration of anything
-	RegBase * R = new Reg<T, CT>(v,_name);
+	RegBase * R = new Reg<T, CT, FLAGS>(v,_name);
 	R->isFunction = sttr::is_function<T>::value;
 	R->isVariable = sttr::is_variable<T>::value;
 	R->isConst = sttr::is_const<T>::value;
@@ -281,11 +281,11 @@ namespace sttr {
 	}
 }
 namespace sttr {
-  template <typename T>
+  template <typename T, unsigned int FLAGS>
   RegNamespace & RegNamespace::beginClass (char const * _name) {
 	RegNamespace * R = new RegNamespace(_name);
 	R->parent = this;
-	R->thisClass = new Reg<T*, sttr::NullType>(NULL, _name);
+	R->thisClass = new Reg<T*, sttr::NullType, FLAGS>(NULL, _name);
 //	R->baseClassTuple = new Reg<VaradicWrap<>*, T>(NULL, "");
 	R->thisClassSig = sttr::getTypeSignature<T>();
 	classes.push_back(R);

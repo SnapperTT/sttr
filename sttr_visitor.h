@@ -20,7 +20,7 @@ namespace sttr {
 	template<typename ...ARGS>
 	struct VaradicWrap{};
 
-	template<typename T, typename CT>
+	template<typename T, typename CT, unsigned int FLAGS>
 	class Reg;
 	
 	// Utility templates
@@ -138,10 +138,10 @@ namespace sttr {
 namespace sttr {
   class Visitor_Base {
   public:
-    template <typename T, typename CT>
-    void visit (sttr::Reg <T, CT> * RB);
-    template <typename T, typename CT>
-    void visitClass (sttr::Reg <T, CT> * CLASS);
+    template <typename T, typename CT, unsigned int FLAGS = 0>
+    void visit (sttr::Reg <T, CT, FLAGS> * RB);
+    template <typename T, typename CT, unsigned int FLAGS = 0>
+    void visitClass (sttr::Reg <T, CT, FLAGS> * CLASS);
     virtual void * getSignature ();
     static void * getSignatureStatic ();
   };
@@ -176,14 +176,14 @@ namespace sttr {
   bool isType (R const * const r) { return r->sttr_getClassSig() == sttr::getTypeSignature<T>(); }
 }
 namespace sttr {
-  template <typename T, typename CT>
-  void Visitor_Base::visit (sttr::Reg <T, CT> * RB) {
+  template <typename T, typename CT, unsigned int FLAGS>
+  void Visitor_Base::visit (sttr::Reg <T, CT, FLAGS> * RB) {
 	// Your code here if deriving from this class 
 	}
 }
 namespace sttr {
-  template <typename T, typename CT>
-  void Visitor_Base::visitClass (sttr::Reg <T, CT> * CLASS) {
+  template <typename T, typename CT, unsigned int FLAGS>
+  void Visitor_Base::visitClass (sttr::Reg <T, CT, FLAGS> * CLASS) {
 	// This is called for RegNamespace::thisClass. Used to visit class types themselves
 	}
 }

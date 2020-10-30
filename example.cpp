@@ -8,8 +8,8 @@
 #include "sttr_visitor.h"
 class MyVisitor : public sttr::Visitor_Base {
 public:
-	template<typename T, typename CT>
-	void visit(sttr::Reg<T, CT> * RB) {
+	template<typename T, typename CT, unsigned int FLAGS=0>
+	void visit(sttr::Reg<T, CT, FLAGS> * RB) {
 		//std::cout << "Visiting! " << sttr::getTypeName<T>() << std::endl;
 		}
 	
