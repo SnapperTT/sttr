@@ -85,6 +85,9 @@ namespace sttr {
 	template <typename T>
 	using is_const = std::is_const<typename std::remove_pointer<T>::type>;
 	
+	template <typename T>
+	using is_default_constructible_non_const = sttr::conjunction<std::is_default_constructible<T>, sttr::negate<std::is_const<T>>>;
+	
 //	template<typename T>
 //static char * getTypeSignature(); // Should this be static??
 
@@ -129,7 +132,7 @@ template<typename T> T * constructIfDefaultConstructible_worker(std::false_type 
 template<typename T> T * constructIfDefaultConstructible_worker(std::true_type isDefaultConstructible) { return new T; }
 template<typename T>
 T * constructIfDefaultConstructible() {
-	return constructIfDefaultConstructible_worker<T>(sttr::conjunction<std::is_default_constructible<T>, sttr::negate<std::is_const<T>>>());
+	return constructIfDefaultConstructible_worker<T>(sttr::is_default_constructible_non_const<T>());
 	}
 	
 	
@@ -142,10 +145,10 @@ char * getTypeSignature() {
 
 // Returns true if and only if R is of type T
 template <typename T, typename R>
-bool isType(const R & r) { return r.sttr_getClassSig() == sttr::getTypeSignature<T>(); }
+inline bool isType(const R & r) { return r.sttr_getClassSig() == sttr::getTypeSignature<T>(); }
 	
 template <typename T, typename R>
-bool isType(const R * const r) { return r->sttr_getClassSig() == sttr::getTypeSignature<T>(); }
+inline bool isType(const R * const r) { return r->sttr_getClassSig() == sttr::getTypeSignature<T>(); }
 
 class Visitor_Base {
 public:

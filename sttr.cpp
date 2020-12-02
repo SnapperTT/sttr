@@ -224,7 +224,7 @@ namespace sttr {
 		R = R->parent;
 		if (!R) break;
 		}
-		
+	
 	for (unsigned int i = chain.size()-1; i < chain.size(); --i) {
 		chain[i]->visit(v);
 		}

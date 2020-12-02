@@ -32,6 +32,7 @@ namespace sttr {
 
 // Macro for registering field
 #define STTR_REG(C,X) regField<C>(&C::X,#X)
+#define STTR_REGF(C,X,F) regField<C,decltype(&C::X),F>(&C::X,#X).setUserFlags(F)
 
 // Workaround for lazy-c++
 #define STTR_VARADIC_TEMPLATE_ARGS1 ...ARGS
