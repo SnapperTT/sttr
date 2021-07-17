@@ -126,7 +126,7 @@ public:
 		#endif
 		v->visit(this);
 		}
-		
+				
 	 void visitClass (Visitor_Base * v) {}
 		
 	void* construct() { return construct_worker(func, sttr::is_variable<T>()); }
@@ -144,6 +144,37 @@ public:
 
 template<typename T, unsigned int FLAGS>
 class Reg<T, sttr::NullType, FLAGS> : public RegBase {
+public:
+	T func;
+	
+	Reg(T v, const char * _name) : RegBase(_name), func(v) {}
+	virtual ~Reg(){}
+	
+	void visit(Visitor_Base * v) {}
+	
+	 void visitClass (Visitor_Base * v) {
+		// Used for the actual class types (RegNamespace::thisClass)
+		#ifdef STTR_CLASS_VISITORS
+			STTR_CLASS_VISITORS
+		#endif
+		v->visitClass(this);
+		}
+	
+	void* construct() { return construct_worker(func, sttr::is_variable<T>()); }
+	
+	/// Returns the type of T as a human readable string
+	std::string getTypeName() { return sttr::getTypeName<T>(); }
+	std::string getTypePointingTo() { return sttr::getTypeName<decltype(sttr::getTypePointingTo(func))>(); }
+		
+	const unsigned long long int getOffset() const {
+		const unsigned long long int * first = reinterpret_cast<const unsigned long long int *>(&func);
+		unsigned char const * first2 = reinterpret_cast<unsigned char *>(*first);
+		return reinterpret_cast<size_t>(first2);
+		}
+	};
+
+template<typename T, unsigned int FLAGS, typename STTR_VARADIC_TEMPLATE_ARGS1>
+class Reg<T, sttr::ParameterPack<ARGS...>, FLAGS> : public RegBase {
 public:
 	T func;
 	
@@ -268,12 +299,13 @@ public:
 		return thisClass->userData;
 		}
 		
-	template<typename T, unsigned int FLAGS=0>
+	template<typename T, unsigned int FLAGS=0, typename PP=sttr::NullType>
 	RegNamespace & beginClass(const char * _name) {
 		RegNamespace * R = new RegNamespace(_name);
 		R->parent = this;
-		R->thisClass = new Reg<T*, sttr::NullType, FLAGS>(NULL, _name);
+		R->thisClass = new Reg<T*, PP, FLAGS>(NULL, _name);
 //		R->baseClassTuple = new Reg<VaradicWrap<>*, T>(NULL, "");
+		if (FLAGS) R->thisClass->userFlags = FLAGS;
 		R->thisClassSig = sttr::getTypeSignature<T>();
 		classes.push_back(R);
 		
@@ -307,22 +339,26 @@ public:
 //		if (baseClassTuple) baseClassTuple->visit(v);
 //		}
 	
-	template<typename BASE, typename DERIVED>
+	template<typename BASE, typename DERIVED, unsigned int FLAGS = 0, typename STTR_VARADIC_TEMPLATE_ARGS1>
 	RegNamespace & deriveClass(const char * name) {
 		/// Can be used to define a class even if its parent hasn't be defined yet.
 		// Should only be used for a base of a tree
 		assert((!parent) && "sttr::RegNamespace::deriveClass being called on a RegNamespace that is not the base (it has a parent)");
 		
-		
+		static_assert(std::is_base_of<BASE,DERIVED>::value, "Class is not derived from base");
+		#if __cplusplus >= 201703L
+			static_assert((std::is_base_of<BASE,ARGS>::value && ...), "Class is not derived from bases (varadic pack member)");
+		#endif
+				
 		void* baseSig = sttr::getTypeSignature<BASE>();
 		RegNamespace * R = findClassPointerBySig(baseSig);
 		if (R) {
-			RegNamespace & RR = R->beginClass<DERIVED>(name);
+			RegNamespace & RR = R->beginClass<DERIVED, FLAGS, sttr::ParameterPack<BASE,ARGS...> >(name);
 //			RR.storeBaseClassTuple<DERIVED,BASE>();
 			return RR;
 			}
 			
-		RegNamespace & RR = beginClass<DERIVED>(name);
+		RegNamespace & RR = beginClass<DERIVED, FLAGS, sttr::ParameterPack<BASE,ARGS...> >(name);
 //		RR.storeBaseClassTuple<DERIVED, BASE>();
 		RR.uninstantiatedParent = baseSig;
 		return RR;

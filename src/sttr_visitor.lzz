@@ -23,9 +23,8 @@
 namespace sttr {
 	class NullType {};
 	
-	template<typename ...ARGS>
-	struct VaradicWrap{};
-
+	template<typename ... Types> struct ParameterPack {};
+	
 	template<typename T, typename CT, unsigned int FLAGS>
 	class Reg;
 	
@@ -152,8 +151,8 @@ inline bool isType(const R * const r) { return r->sttr_getClassSig() == sttr::ge
 
 class Visitor_Base {
 public:
-	template<typename T, typename CT, unsigned int FLAGS=0>
-	void visit(sttr::Reg<T, CT, FLAGS> * RB) {
+	template<typename T, typename CT, unsigned int FLAGS=0, typename CALLE=sttr::NullType>
+	void visit(sttr::Reg<T, CT, FLAGS> * RB, CALLE*cc=NULL) {
 		// Your code here if deriving from this class 
 		}
 		
