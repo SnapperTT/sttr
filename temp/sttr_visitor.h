@@ -138,6 +138,10 @@ namespace sttr {
   bool isType (R const * const r);
 }
 namespace sttr {
+  template <typename T, typename R>
+  bool isType (R * const r);
+}
+namespace sttr {
   class Visitor_Base {
   public:
     template <typename T, typename CT, unsigned int FLAGS = 0, typename CALLE = sttr::NullType>
@@ -176,6 +180,10 @@ namespace sttr {
 namespace sttr {
   template <typename T, typename R>
   LZZ_INLINE bool isType (R const * const r) { return r->sttr_getClassSig() == sttr::getTypeSignature<T>(); }
+}
+namespace sttr {
+  template <typename T, typename R>
+  LZZ_INLINE bool isType (R * const r) { return r->sttr_getClassSig() == sttr::getTypeSignature<T>(); }
 }
 namespace sttr {
   template <typename T, typename CT, unsigned int FLAGS, typename CALLE>

@@ -143,11 +143,9 @@ char * getTypeSignature() {
 	}
 
 // Returns true if and only if R is of type T
-template <typename T, typename R>
-inline bool isType(const R & r) { return r.sttr_getClassSig() == sttr::getTypeSignature<T>(); }
-	
-template <typename T, typename R>
-inline bool isType(const R * const r) { return r->sttr_getClassSig() == sttr::getTypeSignature<T>(); }
+template <typename T, typename R> inline bool isType(const R & r) { return r.sttr_getClassSig() == sttr::getTypeSignature<T>(); }
+template <typename T, typename R> inline bool isType(const R * const r) { return r->sttr_getClassSig() == sttr::getTypeSignature<T>(); }
+template <typename T, typename R> inline bool isType(R * const r) { return r->sttr_getClassSig() == sttr::getTypeSignature<T>(); }
 
 class Visitor_Base {
 public:
