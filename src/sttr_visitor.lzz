@@ -138,14 +138,14 @@ T * constructIfDefaultConstructible() {
 // Converts a type to a unique address
 template<typename T>
 char * getTypeSignature() {
-	static char R;
+	static char R = 0;
 	return &R;
 	}
 
 // Returns true if and only if R is of type T
-template <typename T, typename R> inline bool isType(const R & r) { return r.sttr_getClassSig() == sttr::getTypeSignature<T>(); }
-template <typename T, typename R> inline bool isType(const R * const r) { return r->sttr_getClassSig() == sttr::getTypeSignature<T>(); }
-template <typename T, typename R> inline bool isType(R * const r) { return r->sttr_getClassSig() == sttr::getTypeSignature<T>(); }
+template <typename T, typename R> inline bool isType(const R & r) { return r.sttr_getClassSig() == (void*) sttr::getTypeSignature<T>(); }
+template <typename T, typename R> inline bool isType(const R * const r) { return r->sttr_getClassSig() == (void*) sttr::getTypeSignature<T>(); }
+template <typename T, typename R> inline bool isType(R * const r) { return r->sttr_getClassSig() == (void*) sttr::getTypeSignature<T>(); }
 
 class Visitor_Base {
 public:

@@ -169,21 +169,21 @@ namespace sttr {
 namespace sttr {
   template <typename T>
   char * getTypeSignature () {
-	static char R;
+	static char R = 0;
 	return &R;
 	}
 }
 namespace sttr {
   template <typename T, typename R>
-  LZZ_INLINE bool isType (R const & r) { return r.sttr_getClassSig() == sttr::getTypeSignature<T>(); }
+  LZZ_INLINE bool isType (R const & r) { return r.sttr_getClassSig() == (void*) sttr::getTypeSignature<T>(); }
 }
 namespace sttr {
   template <typename T, typename R>
-  LZZ_INLINE bool isType (R const * const r) { return r->sttr_getClassSig() == sttr::getTypeSignature<T>(); }
+  LZZ_INLINE bool isType (R const * const r) { return r->sttr_getClassSig() == (void*) sttr::getTypeSignature<T>(); }
 }
 namespace sttr {
   template <typename T, typename R>
-  LZZ_INLINE bool isType (R * const r) { return r->sttr_getClassSig() == sttr::getTypeSignature<T>(); }
+  LZZ_INLINE bool isType (R * const r) { return r->sttr_getClassSig() == (void*) sttr::getTypeSignature<T>(); }
 }
 namespace sttr {
   template <typename T, typename CT, unsigned int FLAGS, typename CALLE>
