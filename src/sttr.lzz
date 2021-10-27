@@ -341,6 +341,7 @@ public:
 	
 	template<typename BASE, typename DERIVED, unsigned int FLAGS = 0, typename STTR_VARADIC_TEMPLATE_ARGS1>
 	RegNamespace & deriveClass(const char * name) {
+		/// Usage R.deriveClass < BaseClass, FinalClass, (Flags), (IntermediateClass1), ... (IntermediateClassN)>("FinalClass")
 		/// Can be used to define a class even if its parent hasn't be defined yet.
 		// Should only be used for a base of a tree
 		assert((!parent) && "sttr::RegNamespace::deriveClass being called on a RegNamespace that is not the base (it has a parent)");
