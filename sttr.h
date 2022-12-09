@@ -19,8 +19,9 @@
 #endif
 	
 #define STTR_BTOS(B) (B ? "true" : "false")
-#define STTR_CLASS_SIG(X) virtual void * sttr_getClassSig() const { return (void*) sttr::getTypeSignature<X>(); } 			virtual const char * const sttr_getClassName() const { return sttr::getTypeName<X>(); }
-
+#ifndef STTR_CLASS_SIG
+	#define STTR_CLASS_SIG(X) virtual void * sttr_getClassSig() const { return (void*) sttr::getTypeSignature<X>(); } 				virtual const char * const sttr_getClassName() const { return sttr::getTypeName<X>(); }
+#endif
 // STTR_VISITORS Must be defined before #include "sttr.h"
 //#define STTR_VISITORS //	STTR_ADD_VISITOR(visitoclass_x) //	STTR_ADD_VISITOR(visitoclass_y) //	STTR_ADD_VISITOR(visitoclass_z) 
 
@@ -369,6 +370,7 @@ namespace sttr {
 namespace sttr {
   template <typename BASE, typename DERIVED, unsigned int FLAGS, typename STTR_VARADIC_TEMPLATE_ARGS1>
   RegNamespace & RegNamespace::deriveClass (char const * name) {
+	/// Usage R.deriveClass < BaseClass, FinalClass, (Flags), (IntermediateClass1), ... (IntermediateClassN)>("FinalClass")
 	/// Can be used to define a class even if its parent hasn't be defined yet.
 	// Should only be used for a base of a tree
 	assert((!parent) && "sttr::RegNamespace::deriveClass being called on a RegNamespace that is not the base (it has a parent)");

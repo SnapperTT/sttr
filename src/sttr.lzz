@@ -15,9 +15,10 @@
 #endif
 		
 #define STTR_BTOS(B) (B ? "true" : "false")
-#define STTR_CLASS_SIG(X) virtual void * sttr_getClassSig() const { return (void*) sttr::getTypeSignature<X>(); } \
-						virtual const char * const sttr_getClassName() const { return sttr::getTypeName<X>(); }
-
+#ifndef STTR_CLASS_SIG
+	#define STTR_CLASS_SIG(X) virtual void * sttr_getClassSig() const { return (void*) sttr::getTypeSignature<X>(); } \
+							virtual const char * const sttr_getClassName() const { return sttr::getTypeName<X>(); }
+#endif
 // STTR_VISITORS Must be defined before #include "sttr.h"
 //#define STTR_VISITORS \
 //	STTR_ADD_VISITOR(visitoclass_x) \
