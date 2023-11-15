@@ -1,5 +1,6 @@
 #ifndef STTR_CLASS_SIG
 	// Create auto 
+	#define STTR_NULL_ARG
 	#define STTR_CLASS_SIG_WORKER(X,VIRTUAL,NAME) VIRTUAL void * sttr_getClassSig() const { return (void*) sttr::getTypeSignature<X>(); } 	\
 													VIRTUAL const char * const sttr_getClassName() const { return NAME; }
 							
@@ -16,7 +17,7 @@
 								return NULL;																			\
 								}
 	// STTR_CLASS_SIG without virtual			
-	#define STTR_CLASS_SIG_NON_POLY(X) STTR_CLASS_SIG_WORKER(X, , sttr::getTypeName<X>())
+	#define STTR_CLASS_SIG_NON_POLY(X) STTR_CLASS_SIG_WORKER(X, STTR_NULL_ARG, sttr::getTypeName<X>())
 							
 	#define STTR_AUTO_REG_FUNC(REG_FUNC) static char sttr_regAutoInvoke = (REG_FUNC(), 1);
 	
