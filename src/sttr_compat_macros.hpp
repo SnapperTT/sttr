@@ -33,10 +33,12 @@
 	// HPP/CPP variants
 	#define STTR_CLASS_SIG_NON_POLY_HPP(X) void* sttr_getClassSig() const; \
 											const char * const sttr_getClassName() const;
+	
 	#define STTR_CLASS_SIG_NON_POLY_CPP(X) void* X::sttr_getClassSig() const { return (void*) sttr::getTypeSignature<X>(); } \
 											const char * const X::sttr_getClassName() const { return sttr::getTypeName<X>(); }
 											
 	#define STTR_AUTO_REG_FUNC_HPP(X, REG_FUNC) static char sttr_regAutoInvoke;
+	
 	#define STTR_AUTO_REG_FUNC_CPP(X, REG_FUNC) char X::sttr_regAutoInvoke = (X::REG_FUNC(), 1);
 #endif
 
