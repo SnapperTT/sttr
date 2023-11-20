@@ -12,6 +12,7 @@
 #include <vector>
 #include <cassert>
 #include <cstring>
+#include <cstdint>
 #include <string>
 
 #ifndef STTR_VISITOR_HEADER
@@ -137,6 +138,7 @@ namespace sttr {
     void * uninstantiatedParent;
     RegNamespace (char const * _name);
     ~ RegNamespace ();
+    void clear ();
     template <typename CT = sttr::NullType, typename T = sttr::NullType, unsigned int FLAGS = 0>
     RegNamespace & regField (T v, char const * _name);
     template <typename CT, typename T>

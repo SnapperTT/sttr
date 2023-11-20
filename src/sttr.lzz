@@ -8,6 +8,7 @@
 #include <vector>
 #include <cassert>
 #include <cstring>
+#include <cstdint>
 #include <string>
 
 #ifndef STTR_VISITOR_HEADER
@@ -220,6 +221,10 @@ public:
 	
 	RegNamespace(const char * _name) : parent(NULL), name(_name), thisClass(NULL), thisClassSig(NULL), uninstantiatedParent(NULL) {}
 	~RegNamespace() {
+		clear();
+		}
+		
+	void clear() {
 		for (RegBase * RB : members) delete RB;
 		for (RegNamespace * RN : classes) delete RN;
 		if (thisClass) delete thisClass;

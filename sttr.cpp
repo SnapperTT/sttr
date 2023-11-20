@@ -52,6 +52,11 @@ namespace sttr {
 }
 namespace sttr {
   RegNamespace::~ RegNamespace () {
+	clear();
+	}
+}
+namespace sttr {
+  void RegNamespace::clear () {
 	for (RegBase * RB : members) delete RB;
 	for (RegNamespace * RN : classes) delete RN;
 	if (thisClass) delete thisClass;
