@@ -60,7 +60,10 @@ namespace sttr {
 	for (RegBase * RB : members) delete RB;
 	for (RegNamespace * RN : classes) delete RN;
 	if (thisClass) delete thisClass;
+	thisClass = NULL;
 //	if (baseClassTuple) delete baseClassTuple;
+	members.clear();
+	classes.clear();
 	}
 }
 namespace sttr {
